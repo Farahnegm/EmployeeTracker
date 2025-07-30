@@ -11,6 +11,7 @@ namespace CodeZone.DAL.Interface
     {
         Task<IEnumerable<Attendance>> GetAllAsync();
         Task<Attendance?> GetByIdAsync(int id);
+        Task<Attendance?> GetByEmployeeAndDateAsync(int employeeId, DateTime date);
         Task AddAsync(Attendance attendance);
         Task UpdateAsync(Attendance attendance);
         Task DeleteAsync(int id);

@@ -8,7 +8,7 @@ using FluentValidation.Results;
 
 namespace CodeZone.BLL.Interfaces
 {
-    public interface IDepartmentService
+    public interface IDepartmentService : IBaseService
     {
         Task<List<Department>> GetDepartmentsAsync();
         Task<Department?> GetDepartmentAsync(int id);

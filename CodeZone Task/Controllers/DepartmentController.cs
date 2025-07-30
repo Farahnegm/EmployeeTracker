@@ -54,7 +54,7 @@ namespace CodeZone_Task.Controllers
                 return View(department);
             }
 
-            TempData["SuccessMessage"] = "Department created successfully!";
+            TempData["SuccessMessage"] = _departmentService.GetSuccessMessage("created", "Department");
             return RedirectToAction(nameof(Details), new { id = createdDepartment!.DepartmentId });
         }
 
@@ -91,7 +91,7 @@ namespace CodeZone_Task.Controllers
                 return View(department);
             }
 
-            TempData["SuccessMessage"] = "Department updated successfully!";
+            TempData["SuccessMessage"] = _departmentService.GetSuccessMessage("updated", "Department");
             return RedirectToAction(nameof(Details), new { id = id });
         }
 
@@ -116,12 +116,11 @@ namespace CodeZone_Task.Controllers
             
             if (!validation.IsValid)
             {
-                var errorMessage = string.Join(", ", validation.Errors.Select(e => e.ErrorMessage));
-                TempData["ErrorMessage"] = errorMessage;
+                TempData["ErrorMessage"] = _departmentService.GetValidationErrorMessage(validation);
             }
             else
             {
-                TempData["SuccessMessage"] = "Department deleted successfully!";
+                TempData["SuccessMessage"] = _departmentService.GetSuccessMessage("deleted", "Department");
             }
             
             return RedirectToAction(nameof(Index));

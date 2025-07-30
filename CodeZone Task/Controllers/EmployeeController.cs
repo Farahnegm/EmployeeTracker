@@ -16,10 +16,17 @@ namespace CodeZone_Task.Controllers
         }
 
         // GET: Employee
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 4)
+        {
+            var paginatedEmployees = await _employeeService.GetEmployeesPaginatedAsync(page, pageSize);
+            return View(paginatedEmployees);
+        }
+
+        // GET: Employee/GetAllEmployees (AJAX)
+        public async Task<IActionResult> GetAllEmployees()
         {
             var employees = await _employeeService.GetAllEmployeesAsync();
-            return View(employees);
+            return Json(employees);
         }
 
         // GET: Employee/Details/5
@@ -58,7 +65,7 @@ namespace CodeZone_Task.Controllers
                 return View(employeeDto);
             }
 
-            TempData["SuccessMessage"] = "Employee created successfully!";
+            TempData["SuccessMessage"] = _employeeService.GetSuccessMessage("created", "Employee");
             return RedirectToAction(nameof(Details), new { id = employee!.Id});
         }
 
@@ -92,7 +99,7 @@ namespace CodeZone_Task.Controllers
                 return View(employeeDto);
             }
 
-            TempData["SuccessMessage"] = "Employee updated successfully!";
+            TempData["SuccessMessage"] = _employeeService.GetSuccessMessage("updated", "Employee");
             return RedirectToAction(nameof(Details), new { id = id });
         }
 
@@ -114,7 +121,7 @@ namespace CodeZone_Task.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             await _employeeService.DeleteEmployeeAsync(id);
-            TempData["SuccessMessage"] = "Employee deleted successfully!";
+            TempData["SuccessMessage"] = _employeeService.GetSuccessMessage("deleted", "Employee");
             return RedirectToAction(nameof(Index));
         }
     }

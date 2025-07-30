@@ -19,16 +19,17 @@ namespace CodeZone_Task.Controllers
         }
 
         // GET: Attendance
-        public async Task<IActionResult> Index(int? deptId, int? empId, DateTime? from, DateTime? to)
+        public async Task<IActionResult> Index(int? deptId, int? empId, DateTime? from, DateTime? to, int page = 1, int pageSize = 4)
         {
-            var attendances = await _attendanceService.FilterAsync(deptId, empId, from, to);
+            var paginatedAttendances = await _attendanceService.GetFilteredAttendancesPaginatedAsync(deptId, empId, from, to, page, pageSize);
             ViewBag.Departments = await _departmentService.GetDepartmentsAsync();
             ViewBag.Employees = await _employeeService.GetAllEmployeesAsync();
             ViewBag.SelectedDeptId = deptId;
             ViewBag.SelectedEmpId = empId;
             ViewBag.FromDate = from;
             ViewBag.ToDate = to;
-            return View(attendances);
+            ViewBag.PaginationData = paginatedAttendances;
+            return View(paginatedAttendances.Items);
         }
 
         // GET: Attendance/Details/5
@@ -67,7 +68,7 @@ namespace CodeZone_Task.Controllers
                 return View(attendanceDto);
             }
 
-            TempData["SuccessMessage"] = "Attendance record created successfully!";
+            TempData["SuccessMessage"] = _attendanceService.GetSuccessMessage("created", "Attendance record");
             return RedirectToAction(nameof(Details), new { id = attendance!.AttendanceId });
         }
 
@@ -101,7 +102,7 @@ namespace CodeZone_Task.Controllers
                 return View(attendanceDto);
             }
 
-            TempData["SuccessMessage"] = "Attendance record updated successfully!";
+            TempData["SuccessMessage"] = _attendanceService.GetSuccessMessage("updated", "Attendance record");
             return RedirectToAction(nameof(Details), new { id = id });
         }
 
@@ -113,11 +114,24 @@ namespace CodeZone_Task.Controllers
             
             if (!validation.IsValid)
             {
-                var errorMessage = string.Join(", ", validation.Errors.Select(e => e.ErrorMessage));
-                return Json(new { success = false, message = errorMessage });
+                return Json(new { success = false, message = _attendanceService.GetValidationErrorMessage(validation) });
             }
 
-            return Json(new { success = true, message = "Status updated successfully!" });
+            return Json(new { success = true, message = _attendanceService.GetSuccessMessage("updated", "Status") });
+        }
+
+        // POST: Attendance/QuickUpdate (AJAX)
+        [HttpPost]
+        public async Task<IActionResult> QuickUpdate(int employeeId, DateTime date, string status)
+        {
+            var (success, validation) = await _attendanceService.QuickUpdateAsync(employeeId, date, status);
+            
+            if (!validation.IsValid)
+            {
+                return Json(new { success = false, message = _attendanceService.GetValidationErrorMessage(validation) });
+            }
+
+            return Json(new { success = true, message = $"Attendance marked as {status} successfully!" });
         }
 
         // GET: Attendance/Delete/5
@@ -138,7 +152,7 @@ namespace CodeZone_Task.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             await _attendanceService.DeleteAsync(id);
-            TempData["SuccessMessage"] = "Attendance record deleted successfully!";
+            TempData["SuccessMessage"] = _attendanceService.GetSuccessMessage("deleted", "Attendance record");
             return RedirectToAction(nameof(Index));
         }
     }

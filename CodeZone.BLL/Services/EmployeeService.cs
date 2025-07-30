@@ -8,7 +8,7 @@ using FluentValidation.Results;
 
 namespace CodeZone.BLL.Services
 {
-    public class EmployeeService : IEmployeeService
+    public class EmployeeService : BaseService, IEmployeeService
     {
         private readonly IEmployeeRepository _repo;
         private readonly IValidator<EmployeeDto> _validator;
@@ -42,6 +42,48 @@ namespace CodeZone.BLL.Services
             }
             
             return employeeDtos;
+        }
+
+        public async Task<PaginationDto<EmployeeDto>> GetEmployeesPaginatedAsync(int page = 1, int pageSize = 10)
+        {
+            var allEmployees = await _repo.GetAllAsync();
+            var totalItems = allEmployees.Count();
+            var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+            
+            // Ensure page is within valid range
+            page = Math.Max(1, Math.Min(page, totalPages > 0 ? totalPages : 1));
+            
+            var pagedEmployees = allEmployees
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize);
+            
+            var employeeDtos = new List<EmployeeDto>();
+            
+            foreach (var e in pagedEmployees)
+            {
+                var (present, absent, percentage) = await GetEmployeeAttendanceStats(e.Id);
+                employeeDtos.Add(new EmployeeDto
+                {
+                    Id = e.Id,
+                    EmployeeCode = e.EmployeeCode,
+                    FullName = e.FullName,
+                    Email = e.Email,
+                    DepartmentId = e.DepartmentId,
+                    DepartmentName = e.Department?.Name ?? string.Empty,
+                    Presents = present,
+                    Absents = absent,
+                    AttendancePercentage = percentage
+                });
+            }
+            
+            return new PaginationDto<EmployeeDto>
+            {
+                Items = employeeDtos,
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages
+            };
         }
 
         public async Task<EmployeeDto?> GetEmployeeByIdAsync(int id)

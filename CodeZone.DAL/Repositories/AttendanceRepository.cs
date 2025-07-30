@@ -25,6 +25,15 @@ namespace CodeZone.DAL.Repositories
         public async Task<Attendance?> GetByIdAsync(int id)
             => await _context.Attendances.Include(a => a.Employee).ThenInclude(e => e.Department).FirstOrDefaultAsync(a => a.AttendanceId == id);
 
+        public async Task<Attendance?> GetByEmployeeAndDateAsync(int employeeId, DateTime date)
+        {
+            var dateOnly = date.Date;
+            return await _context.Attendances
+                .Include(a => a.Employee)
+                .ThenInclude(e => e.Department)
+                .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.Date.Date == dateOnly);
+        }
+
         public async Task AddAsync(Attendance attendance)
         {
             await _context.Attendances.AddAsync(attendance);

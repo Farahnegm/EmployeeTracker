@@ -9,124 +9,712 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 
-<h1>Attendance Records</h1>
+<div class="row">
+    <!-- Main Content -->
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Attendance Records</h1>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#quickAttendanceModal">
+                <i class="fas fa-plus"></i> Quick Attendance Entry
+            </button>
+        </div>
 
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">Filter Records</h5>
-    </div>
-    <div class="card-body">
-        <form method="get" class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label">Department</label>
-                <select name="deptId" class="form-select">
-                    <option value="">All Departments</option>
-                    @foreach (var dept in ViewBag.Departments)
-                    {
-                        var isSelected = (ViewBag.SelectedDeptId?.ToString() == dept.DepartmentId.ToString());
-                        <option value="@dept.DepartmentId" selected="@(isSelected ? "selected" : null)">
-                            @dept.Name
-                        </option>
-                    }
-                </select>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Filter Records</h5>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Employee</label>
-                <select name="empId" class="form-select">
-                    <option value="">All Employees</option>
-                    @foreach (var emp in ViewBag.Employees)
-                    {
-                        var isSelected = ViewBag.SelectedEmpId?.ToString() == emp.Id.ToString();
-                        <option value="@emp.Id" selected="@(isSelected ? "selected" : null)">
-                            @emp.FullName (@emp.DepartmentName)
-                        </option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">From Date</label>
-                <input type="date" name="from" class="form-control" value="@ViewBag.FromDate?.ToString("yyyy-MM-dd")" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">To Date</label>
-                <input type="date" name="to" class="form-control" value="@ViewBag.ToDate?.ToString("yyyy-MM-dd")" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">&nbsp;</label>
-                <div>
-                    <button type="submit" class="btn btn-primary">Filter</button>
-                    <a asp-action="Index" class="btn btn-secondary">Clear</a>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Department</label>
+                        <select name="deptId" class="form-select">
+                            <option value="">All Departments</option>
+                            @foreach (var dept in ViewBag.Departments)
+                            {
+                                var isSelected = (ViewBag.SelectedDeptId?.ToString() == dept.DepartmentId.ToString());
+                                <option value="@dept.DepartmentId" selected="@(isSelected ? "selected" : null)">
+                                    @dept.Name
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Employee</label>
+                        <select name="empId" class="form-select">
+                            <option value="">All Employees</option>
+                            @foreach (var emp in ViewBag.Employees)
+                            {
+                                var isSelected = ViewBag.SelectedEmpId?.ToString() == emp.Id.ToString();
+                                <option value="@emp.Id" selected="@(isSelected ? "selected" : null)">
+                                    @emp.FullName (@emp.DepartmentName)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">From Date</label>
+                        <input type="date" name="from" class="form-control" value="@ViewBag.FromDate?.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">To Date</label>
+                        <input type="date" name="to" class="form-control" value="@ViewBag.ToDate?.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                        <a asp-action="Index" class="btn btn-secondary">Clear</a>
+                        <a asp-action="Create" class="btn btn-success">Create New</a>
+                    </div>
+                </form>
+                
+                <!-- Live Search Row -->
+                <hr class="my-3">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="liveSearch" class="form-label">
+                            <i class="fas fa-search"></i> Live Search
+                        </label>
+                        <input type="text" id="liveSearch" class="form-control" placeholder="Search by employee name, department, date, or status...">
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button type="button" id="clearLiveFilters" class="btn btn-outline-secondary btn-sm">
+                            Clear Live Filters
+                        </button>
+                    </div>
                 </div>
             </div>
-        </form>
+        </div>
+
+        <table class="table table-striped" id="attendanceTable">
+            <thead>
+                <tr>
+                    <th>Attendance ID</th>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr data-attendance-id="@item.AttendanceId">
+                        <td>@item.AttendanceId</td>
+                        <td>@item.Employee?.FullName (@item.Employee?.EmployeeCode)</td>
+                        <td>@item.Employee?.Department?.Name</td>
+                        <td>@item.Date.ToString("MMM dd, yyyy")</td>
+                        <td>
+                            <div class="status-cell">
+                                <span class="status-badge badge @(item.Status == CodeZone.DAL.Entities.Enum.AttendanceStatus.Present ? "bg-success" : "bg-danger")">
+                                    @item.Status
+                                </span>
+                                <select class="status-dropdown form-select form-select-sm" style="display: none; width: auto;">
+                                    @if (item.Status == CodeZone.DAL.Entities.Enum.AttendanceStatus.Present)
+                                    {
+                                        <option value="Present" selected>Present</option>
+                                        <option value="Absent">Absent</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="Present">Present</option>
+                                        <option value="Absent" selected>Absent</option>
+                                    }
+                                </select>
+                                <button class="edit-status-btn btn btn-sm btn-outline-primary ms-1">Edit</button>
+                                <button class="save-status-btn btn btn-sm btn-success ms-1" style="display: none;">Save</button>
+                                <button class="cancel-status-btn btn btn-sm btn-secondary ms-1" style="display: none;">Cancel</button>
+                            </div>
+                        </td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@item.AttendanceId" class="btn btn-info btn-sm">Details</a>
+                            <a asp-action="Edit" asp-route-id="@item.AttendanceId" class="btn btn-warning btn-sm">Edit</a>
+                            <a asp-action="Delete" asp-route-id="@item.AttendanceId" class="btn btn-danger btn-sm">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info">
+                No attendance records found matching the selected criteria.
+            </div>
+        }
+
+        @{
+            var paginationData = ViewBag.PaginationData as CodeZone.BLL.DTOs.PaginationDto<CodeZone.DAL.Entities.Attendance>;
+            var totalItems = paginationData?.TotalItems ?? Model.Count();
+            var pageSize = paginationData?.PageSize ?? 4;
+            var currentPage = paginationData?.CurrentPage ?? 1;
+            var totalPages = paginationData?.TotalPages ?? 1;
+            var startPage = paginationData?.StartPage ?? 1;
+            var endPage = paginationData?.EndPage ?? 1;
+            var hasPreviousPage = paginationData?.HasPreviousPage ?? false;
+            var hasNextPage = paginationData?.HasNextPage ?? false;
+        }
+
+        @if (totalPages > 1)
+        {
+            <nav aria-label="Attendance pagination">
+                <ul class="pagination justify-content-center">
+                    @if (hasPreviousPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-deptId="@ViewBag.SelectedDeptId" 
+                               asp-route-empId="@ViewBag.SelectedEmpId" 
+                               asp-route-from="@ViewBag.FromDate?.ToString("yyyy-MM-dd")" 
+                               asp-route-to="@ViewBag.ToDate?.ToString("yyyy-MM-dd")" 
+                               asp-route-page="@(currentPage - 1)" 
+                               asp-route-pageSize="@pageSize">Previous</a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">Previous</span>
+                        </li>
+                    }
+
+                    @for (int i = startPage; i <= endPage; i++)
+                    {
+                        if (i == currentPage)
+                        {
+                            <li class="page-item active">
+                                <span class="page-link">@i</span>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="page-item">
+                                <a class="page-link" asp-action="Index" 
+                                   asp-route-deptId="@ViewBag.SelectedDeptId" 
+                                   asp-route-empId="@ViewBag.SelectedEmpId" 
+                                   asp-route-from="@ViewBag.FromDate?.ToString("yyyy-MM-dd")" 
+                                   asp-route-to="@ViewBag.ToDate?.ToString("yyyy-MM-dd")" 
+                                   asp-route-page="@i" 
+                                   asp-route-pageSize="@pageSize">@i</a>
+                            </li>
+                        }
+                    }
+
+                    @if (hasNextPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-deptId="@ViewBag.SelectedDeptId" 
+                               asp-route-empId="@ViewBag.SelectedEmpId" 
+                               asp-route-from="@ViewBag.FromDate?.ToString("yyyy-MM-dd")" 
+                               asp-route-to="@ViewBag.ToDate?.ToString("yyyy-MM-dd")" 
+                               asp-route-page="@(currentPage + 1)" 
+                               asp-route-pageSize="@pageSize">Next</a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                        </li>
+                    }
+                </ul>
+            </nav>
+            
+            <div class="text-center text-muted">
+                <small>Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalItems) of @totalItems items</small>
+            </div>
+        }
+    </div>
+    </div>
+
+<!-- Quick Attendance Entry Modal -->
+<div class="modal fade" id="quickAttendanceModal" tabindex="-1" aria-labelledby="quickAttendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickAttendanceModalLabel">Quick Attendance Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Select Employee:</label>
+                    <select id="calendarEmployeeSelect" class="form-select">
+                        <option value="">Choose an employee...</option>
+                        @foreach (var emp in ViewBag.Employees)
+                        {
+                            <option value="@emp.Id" data-name="@emp.FullName" data-dept="@emp.DepartmentName">
+                                @emp.FullName (@emp.DepartmentName)
+                            </option>
+                        }
+                    </select>
+                </div>
+                
+                        <div class="mb-3">
+                            <label class="form-label">Selected Date:</label>
+                            <div id="selectedDateDisplay" class="alert alert-info">
+                                <strong>Date:</strong> <span id="selectedDateText">No date selected</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Current Status:</label>
+                            <div id="currentStatusDisplay" class="alert alert-light">
+                                <strong>Status:</strong> <span id="currentStatusText">Not marked</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" id="statusUpdateSection" style="display: none;">
+                            <label class="form-label">Update Status:</label>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-success" onclick="updateAttendanceStatus('Present')">
+                                    <i class="fas fa-check"></i> Mark Present
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="updateAttendanceStatus('Absent')">
+                                    <i class="fas fa-times"></i> Mark Absent
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Select Date:</label>
+                    <div id="calendarContainer">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                            <p>Please select an employee to view calendar</p>
+                        </div>
+                    </div>
+                </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Create New</a>
-</p>
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Attendance ID</th>
-            <th>Employee</th>
-            <th>Department</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr data-attendance-id="@item.AttendanceId">
-                <td>@item.AttendanceId</td>
-                <td>@item.Employee?.FullName (@item.Employee?.EmployeeCode)</td>
-                <td>@item.Employee?.Department?.Name</td>
-                <td>@item.Date.ToString("MMM dd, yyyy")</td>
-                <td>
-                    <div class="status-cell">
-                        <span class="status-badge badge @(item.Status == CodeZone.DAL.Entities.Enum.AttendanceStatus.Present ? "bg-success" : "bg-danger")">
-                            @item.Status
-                        </span>
-                        <select class="status-dropdown form-select form-select-sm" style="display: none; width: auto;">
-                            @if (item.Status == CodeZone.DAL.Entities.Enum.AttendanceStatus.Present)
-                            {
-                                <option value="Present" selected>Present</option>
-                                <option value="Absent">Absent</option>
-                            }
-                            else
-                            {
-                                <option value="Present">Present</option>
-                                <option value="Absent" selected>Absent</option>
-                            }
-                        </select>
-                        <button class="edit-status-btn btn btn-sm btn-outline-primary ms-1">Edit</button>
-                        <button class="save-status-btn btn btn-sm btn-success ms-1" style="display: none;">Save</button>
-                        <button class="cancel-status-btn btn btn-sm btn-secondary ms-1" style="display: none;">Cancel</button>
-                    </div>
-                </td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.AttendanceId" class="btn btn-info btn-sm">Details</a>
-                    <a asp-action="Edit" asp-route-id="@item.AttendanceId" class="btn btn-warning btn-sm">Edit</a>
-                    <a asp-action="Delete" asp-route-id="@item.AttendanceId" class="btn btn-danger btn-sm">Delete</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-@if (!Model.Any())
-{
-    <div class="alert alert-info">
-        No attendance records found matching the selected criteria.
-    </div>
+<style>
+.calendar {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
 }
+
+.calendar-header {
+    background: #007bff;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    position: relative;
+}
+
+.calendar-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.calendar-nav.prev { left: 10px; }
+.calendar-nav.next { right: 10px; }
+
+.calendar-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+}
+
+.calendar-weekday {
+    padding: 8px 4px;
+    text-align: center;
+    font-weight: bold;
+    color: #495057;
+    font-size: 12px;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-day {
+    padding: 10px 4px;
+    text-align: center;
+    border-right: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    font-size: 14px;
+    min-height: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.calendar-day:hover {
+    background: #e3f2fd;
+}
+
+.calendar-day.other-month {
+    color: #ccc;
+    background: #fafafa;
+}
+
+.calendar-day.today {
+    background: #fff3cd;
+    font-weight: bold;
+    border: 2px solid #ffc107;
+}
+
+.calendar-day.selected {
+    background: #007bff;
+    color: white;
+    font-weight: bold;
+}
+
+.calendar-day.future {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f5f5f5;
+}
+
+.calendar-day.future:hover {
+    background: #f5f5f5;
+}
+
+.day-number {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.attendance-status {
+    font-size: 10px;
+    padding: 3px 6px;
+    border-radius: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-top: 3px;
+    min-width: 25px;
+    display: inline-block;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.status-present {
+    background: #28a745;
+    color: white;
+    border: 1px solid #1e7e34;
+}
+
+.status-absent {
+    background: #dc3545;
+    color: white;
+    border: 1px solid #c82333;
+}
+
+.status-future {
+    background: #ffc107;
+    color: #212529;
+    border: 1px solid #e0a800;
+}
+
+.status-unmarked {
+    background: #6c757d;
+    color: white;
+    border: 1px solid #545b62;
+    opacity: 0.7;
+}
+</style>
 
 @section Scripts {
     <script>
         $(document).ready(function() {
+            let currentDate = new Date();
+            let selectedDate = new Date();
+            let selectedEmployeeId = null;
+            let attendanceData = {};
+            
+            // Initialize calendar
+            renderCalendar();
+            
+            // Employee dropdown change
+            $('#calendarEmployeeSelect').change(function() {
+                selectedEmployeeId = $(this).val();
+                if (selectedEmployeeId) {
+                    loadAttendanceData();
+                    renderCalendar();
+                    updateSelectedDateDisplay();
+                } else {
+                    $('#calendarContainer').html(`
+                        <div class="text-center text-muted">
+                            <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                            <p>Please select an employee to view calendar</p>
+                        </div>
+                    `);
+                    $('#currentStatusText').text('Not marked');
+                    $('#selectedDateText').text('No date selected');
+                    $('#statusUpdateSection').hide();
+                }
+            });
+            
+            function loadAttendanceData() {
+                if (!selectedEmployeeId) return;
+                
+                attendanceData = {};
+                $('table tbody tr').each(function() {
+                    const row = $(this);
+                    const employeeCell = row.find('td:eq(1)').text();
+                    const employeeIdMatch = employeeCell.match(/\((\d+)\)/);
+                    
+                    if (employeeIdMatch && employeeIdMatch[1] == selectedEmployeeId) {
+                        const dateText = row.find('td:eq(3)').text();
+                        const status = row.find('.status-badge').text().trim();
+                        
+                        const dateMatch = dateText.match(/(\w+)\s+(\d+),\s+(\d+)/);
+                        if (dateMatch) {
+                            const monthName = dateMatch[1];
+                            const day = parseInt(dateMatch[2]);
+                            const year = parseInt(dateMatch[3]);
+                            
+                            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                            const monthIndex = monthNames.findIndex(m => monthName.startsWith(m));
+                            
+                            if (monthIndex !== -1) {
+                                const dateKey = `${year}-${(monthIndex + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                                attendanceData[dateKey] = status;
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function renderCalendar() {
+                if (!selectedEmployeeId) {
+                    $('#calendarContainer').html(`
+                        <div class="text-center text-muted">
+                            <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                            <p>Please select an employee to view calendar</p>
+                        </div>
+                    `);
+                    return;
+                }
+                
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+                
+                const firstDay = new Date(year, month, 1);
+                const startDate = new Date(firstDay);
+                startDate.setDate(startDate.getDate() - firstDay.getDay());
+                
+                const today = new Date();
+                
+                let calendarHTML = `
+                    <div class="calendar">
+                        <div class="calendar-header">
+                            <button class="calendar-nav prev" onclick="changeMonth(-1)">&lt;</button>
+                            <h3 class="calendar-title">${getMonthName(month)} ${year}</h3>
+                            <button class="calendar-nav next" onclick="changeMonth(1)">&gt;</button>
+                        </div>
+                        <div class="calendar-weekdays">
+                            <div class="calendar-weekday">Sun</div>
+                            <div class="calendar-weekday">Mon</div>
+                            <div class="calendar-weekday">Tue</div>
+                            <div class="calendar-weekday">Wed</div>
+                            <div class="calendar-weekday">Thu</div>
+                            <div class="calendar-weekday">Fri</div>
+                            <div class="calendar-weekday">Sat</div>
+                        </div>
+                        <div class="calendar-days">
+                `;
+                
+                for (let i = 0; i < 42; i++) {
+                    const currentDay = new Date(startDate);
+                    currentDay.setDate(startDate.getDate() + i);
+                    
+                    const dayNumber = currentDay.getDate();
+                    const isOtherMonth = currentDay.getMonth() !== month;
+                    const isToday = currentDay.toDateString() === today.toDateString();
+                    const isFuture = currentDay > today;
+                    const isSelected = currentDay.toDateString() === selectedDate.toDateString();
+                    
+                    let dayClass = 'calendar-day';
+                    if (isOtherMonth) dayClass += ' other-month';
+                    if (isToday) dayClass += ' today';
+                    if (isSelected) dayClass += ' selected';
+                    if (isFuture) dayClass += ' future';
+                    
+                    const dateKey = currentDay.toISOString().split('T')[0];
+                    const attendanceStatus = attendanceData[dateKey];
+                    
+                    let statusHTML = '';
+                    if (isFuture) {
+                        statusHTML = '<div class="attendance-status status-future">Future</div>';
+                    } else if (attendanceStatus) {
+                        const statusClass = attendanceStatus === 'Present' ? 'status-present' : 'status-absent';
+                        statusHTML = `<div class="attendance-status ${statusClass}">${attendanceStatus}</div>`;
+                    } else {
+                        statusHTML = '<div class="attendance-status status-unmarked"></div>';
+                    }
+                    
+                    if (isFuture) {
+                        calendarHTML += `
+                            <div class="${dayClass}" data-date="${dateKey}">
+                                <div class="day-number">${dayNumber}</div>
+                                ${statusHTML}
+                            </div>
+                        `;
+                    } else {
+                        calendarHTML += `
+                            <div class="${dayClass}" data-date="${dateKey}" onclick="selectDate('${dateKey}')">
+                                <div class="day-number">${dayNumber}</div>
+                                ${statusHTML}
+                            </div>
+                        `;
+                    }
+                }
+                
+                calendarHTML += `
+                        </div>
+                    </div>
+                `;
+                
+                $('#calendarContainer').html(calendarHTML);
+            }
+            
+            function getMonthName(month) {
+                const months = [
+                    'January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'
+                ];
+                return months[month];
+            }
+            
+            window.changeMonth = function(delta) {
+                currentDate.setMonth(currentDate.getMonth() + delta);
+                loadAttendanceData();
+                renderCalendar();
+            };
+            
+            window.selectDate = function(dateString) {
+                const selectedDateObj = new Date(dateString);
+                const today = new Date();
+                
+                if (selectedDateObj > today) {
+                    return;
+                }
+                
+                selectedDate = selectedDateObj;
+                
+                $('.calendar-day').removeClass('selected');
+                $(`.calendar-day[data-date="${dateString}"]`).addClass('selected');
+                
+                updateSelectedDateDisplay();
+                checkCurrentStatus();
+            };
+            
+            function updateSelectedDateDisplay() {
+                if (!selectedEmployeeId) {
+                    $('#selectedDateText').text('No date selected');
+                    return;
+                }
+                
+                const dateString = selectedDate.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                $('#selectedDateText').text(dateString);
+            }
+            
+            function checkCurrentStatus() {
+                if (!selectedEmployeeId) {
+                    $('#currentStatusText').text('Not marked');
+                    $('#statusUpdateSection').hide();
+                    return;
+                }
+                
+                const selectedDateString = selectedDate.toISOString().split('T')[0];
+                const status = attendanceData[selectedDateString] || 'Not marked';
+                
+                $('#currentStatusText').text(status);
+                
+                // Show/hide status update section based on whether attendance is marked
+                if (status === 'Not marked') {
+                    $('#statusUpdateSection').show();
+                } else {
+                    $('#statusUpdateSection').hide();
+                }
+            }
+            
+            window.updateAttendanceStatus = function(status) {
+                if (!selectedEmployeeId) {
+                    showAlert('Please select an employee first.', 'warning');
+                    return;
+                }
+                
+                const selectedDateString = selectedDate.toISOString().split('T')[0];
+                const today = new Date();
+                const selectedDateObj = new Date(selectedDateString);
+                
+                if (selectedDateObj > today) {
+                    showAlert('Cannot mark attendance for future dates.', 'warning');
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/Attendance/QuickUpdate',
+                    type: 'POST',
+                    data: {
+                        employeeId: selectedEmployeeId,
+                        date: selectedDateString,
+                        status: status
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showAlert(`Attendance marked as ${status} successfully!`, 'success');
+                            
+                            // Update local data
+                            attendanceData[selectedDateString] = status;
+                            
+                            // Refresh display
+                            renderCalendar();
+                            checkCurrentStatus();
+                            
+                            // Refresh main table if needed
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            showAlert(response.message || 'Failed to update attendance.', 'danger');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        showAlert('An error occurred while updating attendance.', 'danger');
+                    }
+                });
+            };
+
             // Edit Status Button Click
             $(document).on('click', '.edit-status-btn', function() {
                 const row = $(this).closest('tr');
@@ -167,7 +755,6 @@
                     return;
                 }
 
-                // Disable save button to prevent double-click
                 const saveBtn = statusCell.find('.save-status-btn');
                 saveBtn.prop('disabled', true).text('Saving...');
 
@@ -180,21 +767,22 @@
                     },
                     success: function(response) {
                         if (response.success) {
-                            // Update the display
                             const statusBadge = statusCell.find('.status-badge');
                             statusBadge.text(newStatus);
                             statusBadge.removeClass('bg-success bg-danger');
                             statusBadge.addClass(newStatus === 'Present' ? 'bg-success' : 'bg-danger');
                             
-                            // Show success message
                             showAlert('Attendance status updated successfully!', 'success');
                             
-                            // Reset to view mode
                             statusCell.find('.status-badge').show();
                             statusCell.find('.status-dropdown').hide();
                             statusCell.find('.edit-status-btn').show();
                             statusCell.find('.save-status-btn').hide().prop('disabled', false).text('Save');
                             statusCell.find('.cancel-status-btn').hide();
+                            
+                            // Refresh calendar data
+                            loadAttendanceData();
+                            renderCalendar();
                         } else {
                             showAlert(response.message || 'Failed to update status.', 'danger');
                             saveBtn.prop('disabled', false).text('Save');
@@ -214,11 +802,91 @@
                     .addClass('alert-' + type)
                     .show();
                 
-                // Auto-hide after 5 seconds
                 setTimeout(function() {
                     $('#statusUpdateAlert').fadeOut();
                 }, 5000);
             }
+
+            // Live Search and Filtering Functionality
+            $(document).ready(function() {
+                // Wait a bit to ensure all elements are loaded
+                setTimeout(function() {
+                    const $searchInput = $('#liveSearch');
+                    const $tableRows = $('#attendanceTable tbody tr');
+                    const $clearLiveFiltersBtn = $('#clearLiveFilters');
+
+                    function filterTable() {
+                        const searchTerm = $searchInput.val().toLowerCase().trim();
+
+                        let visibleCount = 0;
+                        let totalVisibleRows = 0;
+
+                        // Only filter rows that are currently visible (not hidden by pagination)
+                        $tableRows.each(function() {
+                            const $row = $(this);
+                            
+                            // Skip rows that are hidden by pagination
+                            if ($row.css('display') === 'none' && !$row.hasClass('pagination-hidden')) {
+                                return;
+                            }
+                            
+                            totalVisibleRows++;
+                            const employeeName = $row.find('td:eq(1)').text().toLowerCase();
+                            const department = $row.find('td:eq(2)').text().toLowerCase();
+                            const date = $row.find('td:eq(3)').text().toLowerCase();
+                            const status = $row.find('td:eq(4) .status-badge').text().toLowerCase();
+
+                            // Check if row matches search term
+                            const matchesSearch = searchTerm === '' || 
+                                               employeeName.includes(searchTerm) || 
+                                               department.includes(searchTerm) || 
+                                               date.includes(searchTerm) || 
+                                               status.includes(searchTerm);
+
+                            // Show/hide row based on search
+                            if (matchesSearch) {
+                                $row.show();
+                                visibleCount++;
+                            } else {
+                                $row.hide();
+                            }
+                        });
+
+                        // Show "no results" message if no rows are visible
+                        if (visibleCount === 0 && totalVisibleRows > 0) {
+                            if ($('#noResultsMessage').length === 0) {
+                                $('#attendanceTable tbody').append(`
+                                    <tr id="noResultsMessage">
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            <i class="fas fa-search"></i> No records found matching your search criteria on this page.
+                                        </td>
+                                    </tr>
+                                `);
+                            }
+                        } else {
+                            $('#noResultsMessage').remove();
+                        }
+                    }
+
+                    // Event listeners for live filtering
+                    $searchInput.on('input', function() {
+                        filterTable();
+                    });
+
+                    $clearLiveFiltersBtn.on('click', function() {
+                        $searchInput.val('');
+                        filterTable();
+                    });
+
+                    // Handle pagination changes
+                    $(document).on('click', '.pagination .page-link', function() {
+                        // Reinitialize filtering after page navigation
+                        setTimeout(function() {
+                            filterTable();
+                        }, 500);
+                    });
+                }, 100);
+            });
         });
     </script>
 } 

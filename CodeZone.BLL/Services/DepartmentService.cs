@@ -6,7 +6,7 @@ using FluentValidation.Results;
 
 namespace CodeZone.BLL.Services
 {
-    public class DepartmentService : IDepartmentService
+    public class DepartmentService : BaseService, IDepartmentService
     {
         private readonly DAL.Interface.IDepartmentService _repository;
         private readonly IValidator<Department> _validator;
