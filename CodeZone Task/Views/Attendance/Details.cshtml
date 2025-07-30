@@ -1,0 +1,163 @@
+@model CodeZone.DAL.Entities.Attendance
+
+@{
+    ViewData["Title"] = "Attendance Details";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div id="statusUpdateAlert" class="alert alert-info alert-dismissible fade show" role="alert" style="display: none;">
+    <span id="statusUpdateMessage"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
+<h1>Attendance Details</h1>
+
+<div class="card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Attendance ID</dt>
+            <dd class="col-sm-9">@Model.AttendanceId</dd>
+
+            <dt class="col-sm-3">Employee Name</dt>
+            <dd class="col-sm-9">@Model.Employee?.FullName</dd>
+
+            <dt class="col-sm-3">Employee Code</dt>
+            <dd class="col-sm-9">@Model.Employee?.EmployeeCode</dd>
+
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9">@Model.Employee?.Email</dd>
+
+            <dt class="col-sm-3">Department</dt>
+            <dd class="col-sm-9">@Model.Employee?.Department?.Name</dd>
+
+            <dt class="col-sm-3">Date</dt>
+            <dd class="col-sm-9">@Model.Date.ToString("MMMM dd, yyyy")</dd>
+
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">
+                <div class="d-flex align-items-center">
+                    <span id="currentStatus" class="badge fs-6 me-3 @(Model.Status == CodeZone.DAL.Entities.Enum.AttendanceStatus.Present ? "bg-success" : "bg-danger")">
+                        @Model.Status
+                    </span>
+                    <select id="statusDropdown" class="form-select form-select-sm" style="width: auto; display: none;">
+                        @if (Model.Status == CodeZone.DAL.Entities.Enum.AttendanceStatus.Present)
+                        {
+                            <option value="Present" selected>Present</option>
+                            <option value="Absent">Absent</option>
+                        }
+                        else
+                        {
+                            <option value="Present">Present</option>
+                            <option value="Absent" selected>Absent</option>
+                        }
+                    </select>
+                    <button id="editStatusBtn" class="btn btn-sm btn-outline-primary ms-2">Edit Status</button>
+                    <button id="saveStatusBtn" class="btn btn-sm btn-success ms-2" style="display: none;">Save</button>
+                    <button id="cancelStatusBtn" class="btn btn-sm btn-secondary ms-2" style="display: none;">Cancel</button>
+                </div>
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a asp-action="Edit" asp-route-id="@Model.AttendanceId" class="btn btn-warning">Edit</a>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            const attendanceId = @Model.AttendanceId;
+            let originalStatus = '@Model.Status';
+
+            // Edit Status Button Click
+            $('#editStatusBtn').click(function() {
+                $('#currentStatus').hide();
+                $('#statusDropdown').show();
+                $('#editStatusBtn').hide();
+                $('#saveStatusBtn').show();
+                $('#cancelStatusBtn').show();
+            });
+
+            // Cancel Status Button Click
+            $('#cancelStatusBtn').click(function() {
+                $('#statusDropdown').val(originalStatus);
+                $('#currentStatus').show();
+                $('#statusDropdown').hide();
+                $('#editStatusBtn').show();
+                $('#saveStatusBtn').hide();
+                $('#cancelStatusBtn').hide();
+                $('#statusUpdateAlert').hide();
+            });
+
+            // Save Status Button Click
+            $('#saveStatusBtn').click(function() {
+                const newStatus = $('#statusDropdown').val();
+                
+                if (newStatus === originalStatus) {
+                    showAlert('No changes detected. The attendance status is already set to the same value.', 'warning');
+                    return;
+                }
+
+                // Disable save button to prevent double-click
+                $('#saveStatusBtn').prop('disabled', true).text('Saving...');
+
+                $.ajax({
+                    url: '/Attendance/UpdateStatus',
+                    type: 'POST',
+                    data: {
+                        id: attendanceId,
+                        status: newStatus
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Update the display
+                            originalStatus = newStatus;
+                            $('#currentStatus').text(newStatus);
+                            $('#currentStatus').removeClass('bg-success bg-danger');
+                            $('#currentStatus').addClass(newStatus === 'Present' ? 'bg-success' : 'bg-danger');
+                            
+                            // Show success message
+                            showAlert('Attendance status updated successfully!', 'success');
+                            
+                            // Reset to view mode
+                            $('#currentStatus').show();
+                            $('#statusDropdown').hide();
+                            $('#editStatusBtn').show();
+                            $('#saveStatusBtn').hide().prop('disabled', false).text('Save');
+                            $('#cancelStatusBtn').hide();
+                        } else {
+                            showAlert(response.message || 'Failed to update status.', 'danger');
+                            $('#saveStatusBtn').prop('disabled', false).text('Save');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        showAlert('An error occurred while updating the status.', 'danger');
+                        $('#saveStatusBtn').prop('disabled', false).text('Save');
+                    }
+                });
+            });
+
+            function showAlert(message, type) {
+                $('#statusUpdateMessage').text(message);
+                $('#statusUpdateAlert')
+                    .removeClass('alert-info alert-success alert-warning alert-danger')
+                    .addClass('alert-' + type)
+                    .show();
+                
+                // Auto-hide after 5 seconds
+                setTimeout(function() {
+                    $('#statusUpdateAlert').fadeOut();
+                }, 5000);
+            }
+        });
+    </script>
+} 

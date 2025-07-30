@@ -1,0 +1,50 @@
+@model IEnumerable<CodeZone.DAL.Entities.Department>
+
+@{
+    ViewData["Title"] = "Departments";
+}
+
+<h1>Departments</h1>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Department ID</th>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Location</th>
+            <th>Employee Count</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.DepartmentId</td>
+                <td>@item.Name</td>
+                <td><span class="badge bg-secondary">@item.Code</span></td>
+                <td>@item.Location</td>
+                <td>
+                    <span class="badge bg-info">@(item.Employees?.Count ?? 0) employees</span>
+                </td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.DepartmentId" class="btn btn-info btn-sm">Details</a>
+                    <a asp-action="Edit" asp-route-id="@item.DepartmentId" class="btn btn-warning btn-sm">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@item.DepartmentId" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table> 

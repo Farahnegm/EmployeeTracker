@@ -1,0 +1,64 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome to CodeZone Attendance System</h1>
+    <p class="lead">Manage your employees, departments, and attendance records efficiently.</p>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Employees</h5>
+                <p class="card-text">Manage employee information, view attendance statistics, and track performance.</p>
+                <a asp-controller="Employee" asp-action="Index" class="btn btn-primary">Manage Employees</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Departments</h5>
+                <p class="card-text">Organize your workforce by departments and manage department information.</p>
+                <a asp-controller="Department" asp-action="Index" class="btn btn-success">Manage Departments</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Attendance</h5>
+                <p class="card-text">Track daily attendance, filter records, and generate attendance reports.</p>
+                <a asp-controller="Attendance" asp-action="Index" class="btn btn-info">View Attendance</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a asp-controller="Employee" asp-action="Create" class="btn btn-outline-primary w-100 mb-2">Add New Employee</a>
+                    </div>
+                    <div class="col-md-3">
+                        <a asp-controller="Department" asp-action="Create" class="btn btn-outline-success w-100 mb-2">Add New Department</a>
+                    </div>
+                    <div class="col-md-3">
+                        <a asp-controller="Attendance" asp-action="Create" class="btn btn-outline-info w-100 mb-2">Record Attendance</a>
+                    </div>
+                    <div class="col-md-3">
+                        <a asp-controller="Attendance" asp-action="Index" class="btn btn-outline-warning w-100 mb-2">View Reports</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

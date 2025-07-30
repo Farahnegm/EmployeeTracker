@@ -1,0 +1,224 @@
+@model IEnumerable<CodeZone.DAL.Entities.Attendance>
+
+@{
+    ViewData["Title"] = "Attendance Records";
+}
+
+<div id="statusUpdateAlert" class="alert alert-info alert-dismissible fade show" role="alert" style="display: none;">
+    <span id="statusUpdateMessage"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
+<h1>Attendance Records</h1>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Filter Records</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Department</label>
+                <select name="deptId" class="form-select">
+                    <option value="">All Departments</option>
+                    @foreach (var dept in ViewBag.Departments)
+                    {
+                        var isSelected = (ViewBag.SelectedDeptId?.ToString() == dept.DepartmentId.ToString());
+                        <option value="@dept.DepartmentId" selected="@(isSelected ? "selected" : null)">
+                            @dept.Name
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Employee</label>
+                <select name="empId" class="form-select">
+                    <option value="">All Employees</option>
+                    @foreach (var emp in ViewBag.Employees)
+                    {
+                        var isSelected = ViewBag.SelectedEmpId?.ToString() == emp.Id.ToString();
+                        <option value="@emp.Id" selected="@(isSelected ? "selected" : null)">
+                            @emp.FullName (@emp.DepartmentName)
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">From Date</label>
+                <input type="date" name="from" class="form-control" value="@ViewBag.FromDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">To Date</label>
+                <input type="date" name="to" class="form-control" value="@ViewBag.ToDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a asp-action="Index" class="btn btn-secondary">Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Attendance ID</th>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr data-attendance-id="@item.AttendanceId">
+                <td>@item.AttendanceId</td>
+                <td>@item.Employee?.FullName (@item.Employee?.EmployeeCode)</td>
+                <td>@item.Employee?.Department?.Name</td>
+                <td>@item.Date.ToString("MMM dd, yyyy")</td>
+                <td>
+                    <div class="status-cell">
+                        <span class="status-badge badge @(item.Status == CodeZone.DAL.Entities.Enum.AttendanceStatus.Present ? "bg-success" : "bg-danger")">
+                            @item.Status
+                        </span>
+                        <select class="status-dropdown form-select form-select-sm" style="display: none; width: auto;">
+                            @if (item.Status == CodeZone.DAL.Entities.Enum.AttendanceStatus.Present)
+                            {
+                                <option value="Present" selected>Present</option>
+                                <option value="Absent">Absent</option>
+                            }
+                            else
+                            {
+                                <option value="Present">Present</option>
+                                <option value="Absent" selected>Absent</option>
+                            }
+                        </select>
+                        <button class="edit-status-btn btn btn-sm btn-outline-primary ms-1">Edit</button>
+                        <button class="save-status-btn btn btn-sm btn-success ms-1" style="display: none;">Save</button>
+                        <button class="cancel-status-btn btn btn-sm btn-secondary ms-1" style="display: none;">Cancel</button>
+                    </div>
+                </td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.AttendanceId" class="btn btn-info btn-sm">Details</a>
+                    <a asp-action="Edit" asp-route-id="@item.AttendanceId" class="btn btn-warning btn-sm">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@item.AttendanceId" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No attendance records found matching the selected criteria.
+    </div>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Edit Status Button Click
+            $(document).on('click', '.edit-status-btn', function() {
+                const row = $(this).closest('tr');
+                const statusCell = row.find('.status-cell');
+                
+                statusCell.find('.status-badge').hide();
+                statusCell.find('.status-dropdown').show();
+                statusCell.find('.edit-status-btn').hide();
+                statusCell.find('.save-status-btn').show();
+                statusCell.find('.cancel-status-btn').show();
+            });
+
+            // Cancel Status Button Click
+            $(document).on('click', '.cancel-status-btn', function() {
+                const row = $(this).closest('tr');
+                const statusCell = row.find('.status-cell');
+                const originalStatus = statusCell.find('.status-badge').text().trim();
+                
+                statusCell.find('.status-dropdown').val(originalStatus);
+                statusCell.find('.status-badge').show();
+                statusCell.find('.status-dropdown').hide();
+                statusCell.find('.edit-status-btn').show();
+                statusCell.find('.save-status-btn').hide().prop('disabled', false).text('Save');
+                statusCell.find('.cancel-status-btn').hide();
+                $('#statusUpdateAlert').hide();
+            });
+
+            // Save Status Button Click
+            $(document).on('click', '.save-status-btn', function() {
+                const row = $(this).closest('tr');
+                const statusCell = row.find('.status-cell');
+                const attendanceId = row.data('attendance-id');
+                const newStatus = statusCell.find('.status-dropdown').val();
+                const originalStatus = statusCell.find('.status-badge').text().trim();
+                
+                if (newStatus === originalStatus) {
+                    showAlert('No changes detected. The attendance status is already set to the same value.', 'warning');
+                    return;
+                }
+
+                // Disable save button to prevent double-click
+                const saveBtn = statusCell.find('.save-status-btn');
+                saveBtn.prop('disabled', true).text('Saving...');
+
+                $.ajax({
+                    url: '/Attendance/UpdateStatus',
+                    type: 'POST',
+                    data: {
+                        id: attendanceId,
+                        status: newStatus
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Update the display
+                            const statusBadge = statusCell.find('.status-badge');
+                            statusBadge.text(newStatus);
+                            statusBadge.removeClass('bg-success bg-danger');
+                            statusBadge.addClass(newStatus === 'Present' ? 'bg-success' : 'bg-danger');
+                            
+                            // Show success message
+                            showAlert('Attendance status updated successfully!', 'success');
+                            
+                            // Reset to view mode
+                            statusCell.find('.status-badge').show();
+                            statusCell.find('.status-dropdown').hide();
+                            statusCell.find('.edit-status-btn').show();
+                            statusCell.find('.save-status-btn').hide().prop('disabled', false).text('Save');
+                            statusCell.find('.cancel-status-btn').hide();
+                        } else {
+                            showAlert(response.message || 'Failed to update status.', 'danger');
+                            saveBtn.prop('disabled', false).text('Save');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        showAlert('An error occurred while updating the status.', 'danger');
+                        saveBtn.prop('disabled', false).text('Save');
+                    }
+                });
+            });
+
+            function showAlert(message, type) {
+                $('#statusUpdateMessage').text(message);
+                $('#statusUpdateAlert')
+                    .removeClass('alert-info alert-success alert-warning alert-danger')
+                    .addClass('alert-' + type)
+                    .show();
+                
+                // Auto-hide after 5 seconds
+                setTimeout(function() {
+                    $('#statusUpdateAlert').fadeOut();
+                }, 5000);
+            }
+        });
+    </script>
+} 
