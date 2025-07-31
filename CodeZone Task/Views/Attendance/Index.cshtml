@@ -244,7 +244,7 @@
                         <option value="">Choose an employee...</option>
                         @foreach (var emp in ViewBag.Employees)
                         {
-                            <option value="@emp.Id" data-name="@emp.FullName" data-dept="@emp.DepartmentName">
+                            <option value="@emp.Id" data-code="@emp.EmployeeCode" data-name="@emp.FullName" data-dept="@emp.DepartmentName">
                                 @emp.FullName (@emp.DepartmentName)
                             </option>
                         }
@@ -265,7 +265,7 @@
                             </div>
                         </div>
                         
-                        <div class="mb-3" id="statusUpdateSection" style="display: none;">
+                        <div class="mb-3" id="statusUpdateSection">
                             <label class="form-label">Update Status:</label>
                             <div class="d-flex gap-2">
                                 <button type="button" class="btn btn-success" onclick="updateAttendanceStatus('Present')">
@@ -451,7 +451,6 @@
             let currentDate = new Date();
             let selectedDate = new Date();
             let selectedEmployeeId = null;
-            let attendanceData = {};
             
             // Initialize calendar
             renderCalendar();
@@ -460,9 +459,9 @@
             $('#calendarEmployeeSelect').change(function() {
                 selectedEmployeeId = $(this).val();
                 if (selectedEmployeeId) {
-                    loadAttendanceData();
                     renderCalendar();
                     updateSelectedDateDisplay();
+                    checkCurrentStatus();
                 } else {
                     $('#calendarContainer').html(`
                         <div class="text-center text-muted">
@@ -476,38 +475,6 @@
                 }
             });
             
-            function loadAttendanceData() {
-                if (!selectedEmployeeId) return;
-                
-                attendanceData = {};
-                $('table tbody tr').each(function() {
-                    const row = $(this);
-                    const employeeCell = row.find('td:eq(1)').text();
-                    const employeeIdMatch = employeeCell.match(/\((\d+)\)/);
-                    
-                    if (employeeIdMatch && employeeIdMatch[1] == selectedEmployeeId) {
-                        const dateText = row.find('td:eq(3)').text();
-                        const status = row.find('.status-badge').text().trim();
-                        
-                        const dateMatch = dateText.match(/(\w+)\s+(\d+),\s+(\d+)/);
-                        if (dateMatch) {
-                            const monthName = dateMatch[1];
-                            const day = parseInt(dateMatch[2]);
-                            const year = parseInt(dateMatch[3]);
-                            
-                            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                            const monthIndex = monthNames.findIndex(m => monthName.startsWith(m));
-                            
-                            if (monthIndex !== -1) {
-                                const dateKey = `${year}-${(monthIndex + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                                attendanceData[dateKey] = status;
-                            }
-                        }
-                    }
-                });
-            }
-            
             function renderCalendar() {
                 if (!selectedEmployeeId) {
                     $('#calendarContainer').html(`
@@ -519,10 +486,10 @@
                     return;
                 }
                 
-                const year = currentDate.getFullYear();
-                const month = currentDate.getMonth();
+                const currentYear = currentDate.getFullYear();
+                const currentMonth = currentDate.getMonth();
                 
-                const firstDay = new Date(year, month, 1);
+                const firstDay = new Date(currentYear, currentMonth, 1);
                 const startDate = new Date(firstDay);
                 startDate.setDate(startDate.getDate() - firstDay.getDay());
                 
@@ -532,7 +499,7 @@
                     <div class="calendar">
                         <div class="calendar-header">
                             <button class="calendar-nav prev" onclick="changeMonth(-1)">&lt;</button>
-                            <h3 class="calendar-title">${getMonthName(month)} ${year}</h3>
+                            <h3 class="calendar-title">${getMonthName(currentMonth)} ${currentYear}</h3>
                             <button class="calendar-nav next" onclick="changeMonth(1)">&gt;</button>
                         </div>
                         <div class="calendar-weekdays">
@@ -548,11 +515,11 @@
                 `;
                 
                 for (let i = 0; i < 42; i++) {
-                    const currentDay = new Date(startDate);
-                    currentDay.setDate(startDate.getDate() + i);
+                    const currentDay = new Date(startDate.getTime()); // Properly clone the date
+                    currentDay.setDate(currentDay.getDate() + i);
                     
                     const dayNumber = currentDay.getDate();
-                    const isOtherMonth = currentDay.getMonth() !== month;
+                    const isOtherMonth = currentDay.getMonth() !== currentMonth;
                     const isToday = currentDay.toDateString() === today.toDateString();
                     const isFuture = currentDay > today;
                     const isSelected = currentDay.toDateString() === selectedDate.toDateString();
@@ -563,31 +530,24 @@
                     if (isSelected) dayClass += ' selected';
                     if (isFuture) dayClass += ' future';
                     
-                    const dateKey = currentDay.toISOString().split('T')[0];
-                    const attendanceStatus = attendanceData[dateKey];
-                    
-                    let statusHTML = '';
-                    if (isFuture) {
-                        statusHTML = '<div class="attendance-status status-future">Future</div>';
-                    } else if (attendanceStatus) {
-                        const statusClass = attendanceStatus === 'Present' ? 'status-present' : 'status-absent';
-                        statusHTML = `<div class="attendance-status ${statusClass}">${attendanceStatus}</div>`;
-                    } else {
-                        statusHTML = '<div class="attendance-status status-unmarked"></div>';
-                    }
+                    // Create date string in local time to avoid timezone issues
+                    const dayYear = currentDay.getFullYear();
+                    const monthStr = String(currentDay.getMonth() + 1).padStart(2, '0');
+                    const dayStr = String(currentDay.getDate()).padStart(2, '0');
+                    const dateString = `${dayYear}-${monthStr}-${dayStr}`;
                     
                     if (isFuture) {
                         calendarHTML += `
-                            <div class="${dayClass}" data-date="${dateKey}">
+                            <div class="${dayClass}" data-date="${dateString}">
                                 <div class="day-number">${dayNumber}</div>
-                                ${statusHTML}
+                                <div class="attendance-status status-future">Future</div>
                             </div>
                         `;
                     } else {
                         calendarHTML += `
-                            <div class="${dayClass}" data-date="${dateKey}" onclick="selectDate('${dateKey}')">
+                            <div class="${dayClass}" data-date="${dateString}" onclick="selectDate('${dateString}')">
                                 <div class="day-number">${dayNumber}</div>
-                                ${statusHTML}
+                                <div class="attendance-status status-unmarked"></div>
                             </div>
                         `;
                     }
@@ -611,12 +571,13 @@
             
             window.changeMonth = function(delta) {
                 currentDate.setMonth(currentDate.getMonth() + delta);
-                loadAttendanceData();
                 renderCalendar();
             };
             
             window.selectDate = function(dateString) {
-                const selectedDateObj = new Date(dateString);
+                // Parse date string properly to avoid timezone issues
+                const [year, month, day] = dateString.split('-').map(Number);
+                const selectedDateObj = new Date(year, month - 1, day); // month is 0-indexed
                 const today = new Date();
                 
                 if (selectedDateObj > today) {
@@ -654,17 +615,36 @@
                     return;
                 }
                 
-                const selectedDateString = selectedDate.toISOString().split('T')[0];
-                const status = attendanceData[selectedDateString] || 'Not marked';
+                // Create date string in local time to match calendar format
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.getDate()).padStart(2, '0');
+                const selectedDateString = `${year}-${month}-${day}`;
                 
-                $('#currentStatusText').text(status);
-                
-                // Show/hide status update section based on whether attendance is marked
-                if (status === 'Not marked') {
-                    $('#statusUpdateSection').show();
-                } else {
-                    $('#statusUpdateSection').hide();
-                }
+                // Make AJAX call to check current status
+                $.ajax({
+                    url: '/Attendance/GetAttendanceStatus',
+                    type: 'GET',
+                    data: {
+                        employeeId: selectedEmployeeId,
+                        date: selectedDateString
+                    },
+                    success: function(response) {
+                        const status = response.status || 'Not marked';
+                        $('#currentStatusText').text(status);
+                        
+                        // Show/hide status update section based on whether attendance is marked
+                        if (status === 'Not marked') {
+                            $('#statusUpdateSection').show();
+                        } else {
+                            $('#statusUpdateSection').hide();
+                        }
+                    },
+                    error: function() {
+                        $('#currentStatusText').text('Not marked');
+                        $('#statusUpdateSection').show();
+                    }
+                });
             }
             
             window.updateAttendanceStatus = function(status) {
@@ -673,11 +653,14 @@
                     return;
                 }
                 
-                const selectedDateString = selectedDate.toISOString().split('T')[0];
+                // Create date string in local time to match calendar format
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.getDate()).padStart(2, '0');
+                const selectedDateString = `${year}-${month}-${day}`;
                 const today = new Date();
-                const selectedDateObj = new Date(selectedDateString);
                 
-                if (selectedDateObj > today) {
+                if (selectedDate > today) {
                     showAlert('Cannot mark attendance for future dates.', 'warning');
                     return;
                 }
@@ -694,11 +677,7 @@
                         if (response.success) {
                             showAlert(`Attendance marked as ${status} successfully!`, 'success');
                             
-                            // Update local data
-                            attendanceData[selectedDateString] = status;
-                            
-                            // Refresh display
-                            renderCalendar();
+                            // Refresh current status display
                             checkCurrentStatus();
                             
                             // Refresh main table if needed
@@ -779,10 +758,6 @@
                             statusCell.find('.edit-status-btn').show();
                             statusCell.find('.save-status-btn').hide().prop('disabled', false).text('Save');
                             statusCell.find('.cancel-status-btn').hide();
-                            
-                            // Refresh calendar data
-                            loadAttendanceData();
-                            renderCalendar();
                         } else {
                             showAlert(response.message || 'Failed to update status.', 'danger');
                             saveBtn.prop('disabled', false).text('Save');
@@ -798,95 +773,82 @@
             function showAlert(message, type) {
                 $('#statusUpdateMessage').text(message);
                 $('#statusUpdateAlert')
-                    .removeClass('alert-info alert-success alert-warning alert-danger')
-                    .addClass('alert-' + type)
+                    .removeClass('alert-success alert-danger alert-warning alert-info')
+                    .addClass(`alert-${type}`)
                     .show();
                 
                 setTimeout(function() {
                     $('#statusUpdateAlert').fadeOut();
-                }, 5000);
+                }, 3000);
             }
 
             // Live Search and Filtering Functionality
-            $(document).ready(function() {
-                // Wait a bit to ensure all elements are loaded
-                setTimeout(function() {
-                    const $searchInput = $('#liveSearch');
-                    const $tableRows = $('#attendanceTable tbody tr');
-                    const $clearLiveFiltersBtn = $('#clearLiveFilters');
+            setTimeout(function() {
+                const $searchInput = $('#liveSearch');
+                const $tableRows = $('#attendanceTable tbody tr');
+                const $clearLiveFiltersBtn = $('#clearLiveFilters');
 
-                    function filterTable() {
-                        const searchTerm = $searchInput.val().toLowerCase().trim();
+                function filterTable() {
+                    const searchTerm = $searchInput.val().toLowerCase().trim();
+                    let visibleCount = 0;
+                    let totalVisibleRows = 0;
 
-                        let visibleCount = 0;
-                        let totalVisibleRows = 0;
-
-                        // Only filter rows that are currently visible (not hidden by pagination)
-                        $tableRows.each(function() {
-                            const $row = $(this);
-                            
-                            // Skip rows that are hidden by pagination
-                            if ($row.css('display') === 'none' && !$row.hasClass('pagination-hidden')) {
-                                return;
-                            }
-                            
-                            totalVisibleRows++;
-                            const employeeName = $row.find('td:eq(1)').text().toLowerCase();
-                            const department = $row.find('td:eq(2)').text().toLowerCase();
-                            const date = $row.find('td:eq(3)').text().toLowerCase();
-                            const status = $row.find('td:eq(4) .status-badge').text().toLowerCase();
-
-                            // Check if row matches search term
-                            const matchesSearch = searchTerm === '' || 
-                                               employeeName.includes(searchTerm) || 
-                                               department.includes(searchTerm) || 
-                                               date.includes(searchTerm) || 
-                                               status.includes(searchTerm);
-
-                            // Show/hide row based on search
-                            if (matchesSearch) {
-                                $row.show();
-                                visibleCount++;
-                            } else {
-                                $row.hide();
-                            }
-                        });
-
-                        // Show "no results" message if no rows are visible
-                        if (visibleCount === 0 && totalVisibleRows > 0) {
-                            if ($('#noResultsMessage').length === 0) {
-                                $('#attendanceTable tbody').append(`
-                                    <tr id="noResultsMessage">
-                                        <td colspan="6" class="text-center text-muted py-4">
-                                            <i class="fas fa-search"></i> No records found matching your search criteria on this page.
-                                        </td>
-                                    </tr>
-                                `);
-                            }
-                        } else {
-                            $('#noResultsMessage').remove();
+                    $tableRows.each(function() {
+                        const $row = $(this);
+                        if ($row.css('display') === 'none' && !$row.hasClass('pagination-hidden')) {
+                            return;
                         }
+                        totalVisibleRows++;
+                        const employeeName = $row.find('td:eq(1)').text().toLowerCase();
+                        const department = $row.find('td:eq(2)').text().toLowerCase();
+                        const date = $row.find('td:eq(3)').text().toLowerCase();
+                        const status = $row.find('td:eq(4) .status-badge').text().toLowerCase();
+
+                        const matchesSearch = searchTerm === '' ||
+                                             employeeName.includes(searchTerm) ||
+                                             department.includes(searchTerm) ||
+                                             date.includes(searchTerm) ||
+                                             status.includes(searchTerm);
+
+                        if (matchesSearch) {
+                            $row.show();
+                            visibleCount++;
+                        } else {
+                            $row.hide();
+                        }
+                    });
+
+                    if (visibleCount === 0 && totalVisibleRows > 0) {
+                        if ($('#noResultsMessage').length === 0) {
+                            $('#attendanceTable tbody').append(`
+                                <tr id="noResultsMessage">
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="fas fa-search"></i> No records found matching your search criteria on this page.
+                                    </td>
+                                </tr>
+                            `);
+                        }
+                    } else {
+                        $('#noResultsMessage').remove();
                     }
+                }
 
-                    // Event listeners for live filtering
-                    $searchInput.on('input', function() {
+                $searchInput.on('input', function() {
+                    filterTable();
+                });
+
+                $clearLiveFiltersBtn.on('click', function() {
+                    $searchInput.val('');
+                    filterTable();
+                });
+
+                // Handle pagination changes
+                $(document).on('click', '.pagination .page-link', function() {
+                    setTimeout(function() {
                         filterTable();
-                    });
-
-                    $clearLiveFiltersBtn.on('click', function() {
-                        $searchInput.val('');
-                        filterTable();
-                    });
-
-                    // Handle pagination changes
-                    $(document).on('click', '.pagination .page-link', function() {
-                        // Reinitialize filtering after page navigation
-                        setTimeout(function() {
-                            filterTable();
-                        }, 500);
-                    });
-                }, 100);
-            });
+                    }, 500);
+                });
+            }, 100);
         });
     </script>
 } 

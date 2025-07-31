@@ -42,8 +42,12 @@ namespace CodeZone.DAL.Repositories
 
         public async Task UpdateAsync(Attendance attendance)
         {
-            _context.Attendances.Update(attendance);
-            await _context.SaveChangesAsync();
+            var existingAttendance = await _context.Attendances.FindAsync(attendance.AttendanceId);
+            if (existingAttendance != null)
+            {
+                _context.Entry(existingAttendance).CurrentValues.SetValues(attendance);
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task DeleteAsync(int id)

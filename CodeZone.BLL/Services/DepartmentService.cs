@@ -1,6 +1,7 @@
 ﻿
 using CodeZone.BLL.Interfaces;
 using CodeZone.DAL.Entities;
+using CodeZone.DAL.Interface;
 using FluentValidation;
 using FluentValidation.Results;
 
@@ -8,10 +9,10 @@ namespace CodeZone.BLL.Services
 {
     public class DepartmentService : BaseService, IDepartmentService
     {
-        private readonly DAL.Interface.IDepartmentService _repository;
+        private readonly IDepartmentRepository _repository;
         private readonly IValidator<Department> _validator;
 
-        public DepartmentService(DAL.Interface.IDepartmentService repository, IValidator<Department> validator)
+        public DepartmentService(IDepartmentRepository repository, IValidator<Department> validator)
         {
             _repository = repository;
             _validator = validator;

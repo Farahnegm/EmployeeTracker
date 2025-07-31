@@ -7,7 +7,7 @@ using CodeZone.DAL.Entities;
 
 namespace CodeZone.DAL.Interface
 {
-    public interface IDepartmentService
+    public interface IDepartmentRepository
     {
         Task<List<Department>> GetAllWithEmployeeCountAsync();
         Task<Department?> GetByIdAsync(int id);

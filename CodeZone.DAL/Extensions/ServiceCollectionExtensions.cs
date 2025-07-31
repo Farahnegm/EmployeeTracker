@@ -17,7 +17,7 @@ namespace CodeZone.DAL.Extensions
                 options.UseInMemoryDatabase("AttendanceTracker"));
 
             services.AddScoped<IDataSeeder, DataSeeder>();
-            services.AddScoped<IDepartmentService, DepartmentRepository>();
+            services.AddScoped<IDepartmentRepository, DepartmentRepository>();
             services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 

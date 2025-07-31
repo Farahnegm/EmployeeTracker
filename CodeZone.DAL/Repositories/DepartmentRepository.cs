@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CodeZone.DAL.Repositories
 {
-    public class DepartmentRepository : IDepartmentService
+    public class DepartmentRepository : IDepartmentRepository
     {
         private readonly AppDbContext _context;
 
@@ -41,8 +41,12 @@ namespace CodeZone.DAL.Repositories
 
         public async Task UpdateAsync(Department department)
         {
-            _context.Departments.Update(department);
-            await _context.SaveChangesAsync();
+            var existingDepartment = await _context.Departments.FindAsync(department.DepartmentId);
+            if (existingDepartment != null)
+            {
+                _context.Entry(existingDepartment).CurrentValues.SetValues(department);
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task DeleteAsync(Department department)

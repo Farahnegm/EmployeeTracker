@@ -19,24 +19,25 @@ namespace CodeZone_Task.Models
                 context.Departments.AddRange(dept1, dept2, dept3);
                 await context.SaveChangesAsync();
 
-                // Seed Employees
+                // Seed Employees with unique codes
+                int employeeCodeCounter = 1000;
                 var emp1 = new Employee
                 {
-                    EmployeeCode = GenerateUniqueEmployeeCode(context),
+                    EmployeeCode = employeeCodeCounter++,
                     FullName = "John Adam Smith Lee",
                     Email = "john.smith@example.com",
                     DepartmentId = dept1.DepartmentId
                 };
                 var emp2 = new Employee
                 {
-                    EmployeeCode = GenerateUniqueEmployeeCode(context),
+                    EmployeeCode = employeeCodeCounter++,
                     FullName = "Sara Jane Mark Doe",
                     Email = "sara.doe@example.com",
                     DepartmentId = dept2.DepartmentId
                 };
                 var emp3 = new Employee
                 {
-                    EmployeeCode = GenerateUniqueEmployeeCode(context),
+                    EmployeeCode = employeeCodeCounter++,
                     FullName = "Ali Omar Fady Noor",
                     Email = "ali.noor@example.com",
                     DepartmentId = dept3.DepartmentId
@@ -57,9 +58,12 @@ namespace CodeZone_Task.Models
 
         private static int GenerateUniqueEmployeeCode(AppDbContext context)
         {
-            return context.Employees.Any()
-                ? context.Employees.Max(e => e.EmployeeCode) + 1
-                : 1000;
+            // Get the maximum employee code from the database
+            var maxCode = context.Employees.Any() 
+                ? context.Employees.Max(e => e.EmployeeCode) 
+                : 999; // Start from 1000 if no employees exist
+            
+            return maxCode + 1;
         }
     }
 }

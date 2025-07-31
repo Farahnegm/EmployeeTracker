@@ -120,6 +120,20 @@ namespace CodeZone_Task.Controllers
             return Json(new { success = true, message = _attendanceService.GetSuccessMessage("updated", "Status") });
         }
 
+        // GET: Attendance/GetAttendanceStatus (AJAX)
+        [HttpGet]
+        public async Task<IActionResult> GetAttendanceStatus(int employeeId, DateTime date)
+        {
+            var attendance = await _attendanceService.GetByEmployeeAndDateAsync(employeeId, date);
+            
+            if (attendance != null)
+            {
+                return Json(new { status = attendance.Status.ToString() });
+            }
+            
+            return Json(new { status = "Not marked" });
+        }
+
         // POST: Attendance/QuickUpdate (AJAX)
         [HttpPost]
         public async Task<IActionResult> QuickUpdate(int employeeId, DateTime date, string status)
