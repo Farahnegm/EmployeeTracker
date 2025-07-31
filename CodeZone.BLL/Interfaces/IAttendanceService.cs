@@ -24,5 +24,6 @@ namespace CodeZone.BLL.Interfaces
         Task<IEnumerable<Attendance>> FilterAsync(int? deptId, int? empId, DateTime? from, DateTime? to);
         Task<PaginationDto<Attendance>> GetAttendancesPaginatedAsync(int page = 1, int pageSize = 4);
         Task<PaginationDto<Attendance>> GetFilteredAttendancesPaginatedAsync(int? deptId, int? empId, DateTime? from, DateTime? to, int page = 1, int pageSize = 4);
+        Task<IEnumerable<Attendance>> SearchAttendancesAsync(string searchTerm, int? deptId = null, int? empId = null, DateTime? from = null, DateTime? to = null);
     }
 }

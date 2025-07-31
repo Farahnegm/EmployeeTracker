@@ -238,5 +238,20 @@ namespace CodeZone.BLL.Services
                 TotalPages = totalPages
             };
         }
+
+        public async Task<IEnumerable<Attendance>> SearchAttendancesAsync(string searchTerm, int? deptId = null, int? empId = null, DateTime? from = null, DateTime? to = null)
+        {
+            // First get filtered data
+            var filteredAttendances = await _repo.FilterAsync(deptId, empId, from, to);
+            var searchTermLower = searchTerm.ToLower().Trim();
+
+            // Then search within the filtered data
+            return filteredAttendances.Where(attendance =>
+                attendance.Employee.FullName.ToLower().Contains(searchTermLower) ||
+                attendance.Employee.Department.Name.ToLower().Contains(searchTermLower) ||
+                attendance.Date.ToString("MMM dd, yyyy").ToLower().Contains(searchTermLower) ||
+                attendance.Status.ToString().ToLower().Contains(searchTermLower)
+            );
+        }
     }
 }

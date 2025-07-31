@@ -148,18 +148,6 @@ namespace CodeZone_Task.Controllers
             return Json(new { success = true, message = $"Attendance marked as {status} successfully!" });
         }
 
-        // GET: Attendance/Delete/5
-        public async Task<IActionResult> Delete(int id)
-        {
-            var attendance = await _attendanceService.GetByIdAsync(id);
-            if (attendance == null)
-            {
-                return NotFound();
-            }
-
-            return View(attendance);
-        }
-
         // POST: Attendance/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
@@ -168,6 +156,21 @@ namespace CodeZone_Task.Controllers
             await _attendanceService.DeleteAsync(id);
             TempData["SuccessMessage"] = _attendanceService.GetSuccessMessage("deleted", "Attendance record");
             return RedirectToAction(nameof(Index));
+        }
+
+        // GET: Attendance/Search (AJAX)
+        [HttpGet]
+        public async Task<IActionResult> Search(string searchTerm, int? deptId, int? empId, DateTime? from, DateTime? to)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                // Return filtered records if search term is empty
+                var filteredAttendances = await _attendanceService.FilterAsync(deptId, empId, from, to);
+                return PartialView("_AttendanceTableBody", filteredAttendances);
+            }
+
+            var searchResults = await _attendanceService.SearchAttendancesAsync(searchTerm, deptId, empId, from, to);
+            return PartialView("_AttendanceTableBody", searchResults);
         }
     }
 } 

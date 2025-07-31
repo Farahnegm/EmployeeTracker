@@ -4,6 +4,8 @@
     ViewData["Title"] = "Attendance Records";
 }
 
+@Html.AntiForgeryToken()
+
 <div id="statusUpdateAlert" class="alert alert-info alert-dismissible fade show" role="alert" style="display: none;">
     <span id="statusUpdateMessage"></span>
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -128,7 +130,7 @@
                         <td>
                             <a asp-action="Details" asp-route-id="@item.AttendanceId" class="btn btn-info btn-sm">Details</a>
                             <a asp-action="Edit" asp-route-id="@item.AttendanceId" class="btn btn-warning btn-sm">Edit</a>
-                            <a asp-action="Delete" asp-route-id="@item.AttendanceId" class="btn btn-danger btn-sm">Delete</a>
+                            <button type="button" class="btn btn-danger btn-sm delete-attendance" data-id="@item.AttendanceId">Delete</button>
                         </td>
                     </tr>
                 }
@@ -452,10 +454,8 @@
             let selectedDate = new Date();
             let selectedEmployeeId = null;
             
-            // Initialize calendar
             renderCalendar();
             
-            // Employee dropdown change
             $('#calendarEmployeeSelect').change(function() {
                 selectedEmployeeId = $(this).val();
                 if (selectedEmployeeId) {
@@ -515,7 +515,7 @@
                 `;
                 
                 for (let i = 0; i < 42; i++) {
-                    const currentDay = new Date(startDate.getTime()); // Properly clone the date
+                    const currentDay = new Date(startDate.getTime()); 
                     currentDay.setDate(currentDay.getDate() + i);
                     
                     const dayNumber = currentDay.getDate();
@@ -575,9 +575,8 @@
             };
             
             window.selectDate = function(dateString) {
-                // Parse date string properly to avoid timezone issues
                 const [year, month, day] = dateString.split('-').map(Number);
-                const selectedDateObj = new Date(year, month - 1, day); // month is 0-indexed
+                const selectedDateObj = new Date(year, month - 1, day); 
                 const today = new Date();
                 
                 if (selectedDateObj > today) {
@@ -785,70 +784,114 @@
             // Live Search and Filtering Functionality
             setTimeout(function() {
                 const $searchInput = $('#liveSearch');
-                const $tableRows = $('#attendanceTable tbody tr');
                 const $clearLiveFiltersBtn = $('#clearLiveFilters');
+                let searchTimeout;
 
-                function filterTable() {
-                    const searchTerm = $searchInput.val().toLowerCase().trim();
-                    let visibleCount = 0;
-                    let totalVisibleRows = 0;
-
-                    $tableRows.each(function() {
-                        const $row = $(this);
-                        if ($row.css('display') === 'none' && !$row.hasClass('pagination-hidden')) {
-                            return;
-                        }
-                        totalVisibleRows++;
-                        const employeeName = $row.find('td:eq(1)').text().toLowerCase();
-                        const department = $row.find('td:eq(2)').text().toLowerCase();
-                        const date = $row.find('td:eq(3)').text().toLowerCase();
-                        const status = $row.find('td:eq(4) .status-badge').text().toLowerCase();
-
-                        const matchesSearch = searchTerm === '' ||
-                                             employeeName.includes(searchTerm) ||
-                                             department.includes(searchTerm) ||
-                                             date.includes(searchTerm) ||
-                                             status.includes(searchTerm);
-
-                        if (matchesSearch) {
-                            $row.show();
-                            visibleCount++;
-                        } else {
-                            $row.hide();
+                function performSearch() {
+                    const searchTerm = $searchInput.val().trim();
+                    
+                    // Get current filter values
+                    const deptId = $('select[name="deptId"]').val();
+                    const empId = $('select[name="empId"]').val();
+                    const fromDate = $('input[name="from"]').val();
+                    const toDate = $('input[name="to"]').val();
+                    
+                    $.ajax({
+                        url: '/Attendance/Search',
+                        type: 'GET',
+                        data: { 
+                            searchTerm: searchTerm,
+                            deptId: deptId,
+                            empId: empId,
+                            from: fromDate,
+                            to: toDate
+                        },
+                        success: function(data) {
+                            $('#attendanceTable tbody').html(data);
+                            
+                            // Re-attach delete event handlers to new rows
+                            $('.delete-attendance').click(function() {
+                                var $row = $(this).closest('tr');
+                                var id = $(this).data('id');
+                                if (confirm('Are you sure you want to delete this attendance record?')) {
+                                    $.ajax({
+                                        url: '/Attendance/Delete/' + id,
+                                        type: 'POST',
+                                        headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+                                        success: function() {
+                                            $row.fadeOut(400, function() { $(this).remove(); });
+                                            showNotification('Attendance record deleted successfully!', 'success');
+                                            setTimeout(function() { location.reload(); }, 1000);
+                                        },
+                                        error: function() {
+                                            showNotification('Error deleting attendance record.', 'danger');
+                                        }
+                                    });
+                                }
+                            });
+                            
+                            // Note: Status editing functionality uses $(document).on() 
+                            // so it automatically works with dynamically added content
+                        },
+                        error: function() {
+                            showNotification('Error performing search.', 'danger');
                         }
                     });
-
-                    if (visibleCount === 0 && totalVisibleRows > 0) {
-                        if ($('#noResultsMessage').length === 0) {
-                            $('#attendanceTable tbody').append(`
-                                <tr id="noResultsMessage">
-                                    <td colspan="6" class="text-center text-muted py-4">
-                                        <i class="fas fa-search"></i> No records found matching your search criteria on this page.
-                                    </td>
-                                </tr>
-                            `);
-                        }
-                    } else {
-                        $('#noResultsMessage').remove();
-                    }
                 }
 
                 $searchInput.on('input', function() {
-                    filterTable();
+                    // Clear previous timeout
+                    clearTimeout(searchTimeout);
+                    
+                    // Set new timeout for search (debounce)
+                    searchTimeout = setTimeout(function() {
+                        performSearch();
+                    }, 300);
                 });
 
                 $clearLiveFiltersBtn.on('click', function() {
                     $searchInput.val('');
-                    filterTable();
+                    performSearch();
                 });
 
-                // Handle pagination changes
+                // Handle pagination changes - reload the page to reset search
                 $(document).on('click', '.pagination .page-link', function() {
-                    setTimeout(function() {
-                        filterTable();
-                    }, 500);
+                    if ($searchInput.val().trim() !== '') {
+                        $searchInput.val('');
+                    }
                 });
             }, 100);
+
+            function showNotification(message, type) {
+                $('#ajaxNotification').remove();
+                var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+                var notification = $(`<div id="ajaxNotification" class="alert ${alertClass} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`);
+                $('body').append(notification);
+                setTimeout(function() { notification.alert('close'); }, 3000);
+            }
+
+            $('.delete-attendance').click(function() {
+                var $row = $(this).closest('tr');
+                var id = $(this).data('id');
+                if (confirm('Are you sure you want to delete this attendance record?')) {
+                    $.ajax({
+                        url: '/Attendance/Delete/' + id,
+                        type: 'POST',
+                        headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+                        success: function() {
+                            $row.fadeOut(400, function() { $(this).remove(); });
+                            showNotification('Attendance record deleted successfully!', 'success');
+                            setTimeout(function() { location.reload(); }, 1000);
+                        },
+                        error: function() {
+                            showNotification('Error deleting attendance record.', 'danger');
+                        }
+                    });
+                }
+            });
         });
     </script>
 } 

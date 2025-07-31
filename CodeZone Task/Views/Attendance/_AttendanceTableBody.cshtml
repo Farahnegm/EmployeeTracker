@@ -1,0 +1,38 @@
+@model IEnumerable<CodeZone.DAL.Entities.Attendance>
+
+@foreach (var item in Model)
+{
+    <tr data-attendance-id="@item.AttendanceId">
+        <td>@item.AttendanceId</td>
+        <td>@item.Employee?.FullName (@item.Employee?.EmployeeCode)</td>
+        <td>@item.Employee?.Department?.Name</td>
+        <td>@item.Date.ToString("MMM dd, yyyy")</td>
+        <td>
+            <div class="status-cell">
+                <span class="status-badge badge @(item.Status == CodeZone.DAL.Entities.Enum.AttendanceStatus.Present ? "bg-success" : "bg-danger")">
+                    @item.Status
+                </span>
+                <select class="status-dropdown form-select form-select-sm" style="display: none; width: auto;">
+                    @if (item.Status == CodeZone.DAL.Entities.Enum.AttendanceStatus.Present)
+                    {
+                        <option value="Present" selected>Present</option>
+                        <option value="Absent">Absent</option>
+                    }
+                    else
+                    {
+                        <option value="Present">Present</option>
+                        <option value="Absent" selected>Absent</option>
+                    }
+                </select>
+                <button class="edit-status-btn btn btn-sm btn-outline-primary ms-1">Edit</button>
+                <button class="save-status-btn btn btn-sm btn-success ms-1" style="display: none;">Save</button>
+                <button class="cancel-status-btn btn btn-sm btn-secondary ms-1" style="display: none;">Cancel</button>
+            </div>
+        </td>
+        <td>
+            <a asp-action="Details" asp-route-id="@item.AttendanceId" class="btn btn-info btn-sm">Details</a>
+            <a asp-action="Edit" asp-route-id="@item.AttendanceId" class="btn btn-warning btn-sm">Edit</a>
+            <button type="button" class="btn btn-danger btn-sm delete-attendance" data-id="@item.AttendanceId">Delete</button>
+        </td>
+    </tr>
+} 
