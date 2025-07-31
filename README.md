@@ -73,10 +73,10 @@ Visual Studio 2022+ or Visual Studio Code
 # Project Structure
 CodeZone.AttendanceSystem/
 │
-├── ##CodeZone.UI            ASP.NET Core MVC - UI layer (controllers, views, JS)
-├── ##CodeZone.BLL          # Business Logic Layer (services, validation, DTOs)
-├── ##CodeZone.DAL          # Data Access Layer (DbContext, entities, repositories)
-└── ##CodeZone.Shared       # Shared utilities, enums, and constants
+├── ## CodeZone.UI       ASP.NET Core MVC - UI layer (controllers, views, JS)
+├── ## CodeZone.BLL      Business Logic Layer (services, validation, DTOs)
+├── ## CodeZone.DAL      Data Access Layer (DbContext, entities, repositories)
+└── ## CodeZone.Shared   Shared utilities, enums, and constants
 
 # Enjoy using CodeZone Attendance System!
 
