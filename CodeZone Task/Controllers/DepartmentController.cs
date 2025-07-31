@@ -95,18 +95,6 @@ namespace CodeZone_Task.Controllers
             return RedirectToAction(nameof(Details), new { id = id });
         }
 
-        // GET: Department/Delete/5
-        public async Task<IActionResult> Delete(int id)
-        {
-            var department = await _departmentService.GetDepartmentAsync(id);
-            if (department == null)
-            {
-                return NotFound();
-            }
-
-            return View(department);
-        }
-
         // POST: Department/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]

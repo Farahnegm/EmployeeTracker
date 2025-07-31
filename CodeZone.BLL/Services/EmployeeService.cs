@@ -108,10 +108,10 @@ namespace CodeZone.BLL.Services
 
         public async Task<(bool success, ValidationResult validation)> UpdateEmployeeAsync(int id, EmployeeDto dto)
         {
-            // Validate the DTO
+           
             var validationResult = await _validator.ValidateAsync(dto);
-            if (!validationResult.IsValid)
-            {
+            if (!validationResult.IsValid){
+
                 return (false, validationResult);
             }
 
@@ -156,7 +156,7 @@ namespace CodeZone.BLL.Services
 
         public async Task<(EmployeeDto? employee, ValidationResult validation)> AddEmployeeAsync(EmployeeDto dto)
         {
-            // Validate the DTO
+           
             var validationResult = await _validator.ValidateAsync(dto);
             if (!validationResult.IsValid)
             {
@@ -180,7 +180,6 @@ namespace CodeZone.BLL.Services
             
             await _repo.AddAsync(employee);
             
-            // Return the created employee DTO with the generated EmployeeCode
             return (new EmployeeDto
             {
                 Id = employee.Id,

@@ -8,11 +8,13 @@ namespace CodeZone_Task.Controllers
     {
         private readonly IEmployeeService _employeeService;
         private readonly IDepartmentService _departmentService;
+        private readonly IAttendanceService _attendanceService;
 
-        public EmployeeController(IEmployeeService employeeService, IDepartmentService departmentService)
+        public EmployeeController(IEmployeeService employeeService, IDepartmentService departmentService, IAttendanceService attendanceService)
         {
             _employeeService = employeeService;
             _departmentService = departmentService;
+            _attendanceService = attendanceService;
         }
 
         // GET: Employee
@@ -37,6 +39,10 @@ namespace CodeZone_Task.Controllers
             {
                 return NotFound();
             }
+
+            // Get attendance history for this employee
+            var attendanceHistory = await _attendanceService.GetAttendanceByEmployeeAsync(id);
+            ViewBag.AttendanceHistory = attendanceHistory;
 
             return View(employee);
         }
@@ -87,6 +93,7 @@ namespace CodeZone_Task.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("FullName,Email,DepartmentId")] EmployeeDto employeeDto)
         {
+            employeeDto.Id = id; // Ensure the ID is set for validation
             var (success, validation) = await _employeeService.UpdateEmployeeAsync(id, employeeDto);
             
             if (!validation.IsValid)
@@ -101,18 +108,6 @@ namespace CodeZone_Task.Controllers
 
             TempData["SuccessMessage"] = _employeeService.GetSuccessMessage("updated", "Employee");
             return RedirectToAction(nameof(Details), new { id = id });
-        }
-
-        // GET: Employee/Delete/5
-        public async Task<IActionResult> Delete(int id)
-        {
-            var employee = await _employeeService.GetEmployeeByIdAsync(id);
-            if (employee == null)
-            {
-                return NotFound();
-            }
-
-            return View(employee);
         }
 
         // POST: Employee/Delete/5

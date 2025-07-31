@@ -10,6 +10,7 @@
     <a asp-action="Create" class="btn btn-primary">Create New</a>
 </p>
 
+<div id="employeeTableWrapper">
 <table class="table table-striped">
     <thead>
         <tr>
@@ -38,12 +39,14 @@
                 <td>
                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Details</a>
                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Edit</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Delete</a>
+                    @Html.AntiForgeryToken()
+                    <button type="button" class="btn btn-danger btn-sm delete-employee" data-id="@item.Id">Delete</button>
                 </td>
             </tr>
         }
     </tbody>
 </table>
+</div>
 
 @if (Model.TotalPages > 1)
 {
@@ -96,4 +99,41 @@
     <div class="text-center text-muted">
         <small>Showing @((Model.CurrentPage - 1) * Model.PageSize + 1) to @Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalItems) of @Model.TotalItems items</small>
     </div>
+} 
+
+@section Scripts {
+<script>
+function showNotification(message, type) {
+    $('#ajaxNotification').remove();
+    var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    var notification = $(`<div id="ajaxNotification" class="alert ${alertClass} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>`);
+    $('body').append(notification);
+    setTimeout(function() { notification.alert('close'); }, 3000);
+}
+
+$(document).ready(function() {
+    $('#employeeTableWrapper .delete-employee').click(function() {
+        var $row = $(this).closest('tr');
+        var id = $(this).data('id');
+        if (confirm('Are you sure you want to delete this employee?')) {
+            $.ajax({
+                url: '/Employee/Delete/' + id,
+                type: 'POST',
+                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+                success: function() {
+                    $row.fadeOut(400, function() { $(this).remove(); });
+                    showNotification('Employee deleted successfully!', 'success');
+                    setTimeout(function() { location.reload(); }, 1000);
+                },
+                error: function() {
+                    showNotification('Error deleting employee.', 'danger');
+                }
+            });
+        }
+    });
+});
+</script>
 } 

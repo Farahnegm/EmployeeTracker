@@ -24,7 +24,7 @@ namespace CodeZone.DAL.Repositories
             => await _context.Employees.Include(e => e.Department).ToListAsync();
 
         public async Task<Employee?> GetByIdAsync(int id)
-            => await _context.Employees.FindAsync(id);
+            => await _context.Employees.Include(e => e.Department).FirstOrDefaultAsync(e => e.Id == id);
 
         public async Task AddAsync(Employee employee)
         {

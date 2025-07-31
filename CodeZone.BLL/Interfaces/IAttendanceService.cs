@@ -15,6 +15,7 @@ namespace CodeZone.BLL.Interfaces
         Task<Attendance?> GetByIdAsync(int id);
         Task<AttendanceDto?> GetDtoByIdAsync(int id);
         Task<Attendance?> GetByEmployeeAndDateAsync(int employeeId, DateTime date);
+        Task<IEnumerable<Attendance>> GetAttendanceByEmployeeAsync(int employeeId);
         Task<(Attendance? attendance, ValidationResult validation)> AddAsync(AttendanceDto dto);
         Task<(bool success, ValidationResult validation)> UpdateAsync(int id, AttendanceDto dto);
         Task<(bool success, ValidationResult validation)> UpdateStatusAsync(int id, string status);

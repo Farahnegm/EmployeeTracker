@@ -10,20 +10,20 @@ namespace CodeZone.BLL.Validation
         public DepartmentValidator(AppDbContext db)
         {
             RuleFor(d => d.Name)
-                .NotEmpty()
-                .Length(3, 50)
+                .NotEmpty().WithMessage("Department name is required.")
+                .Length(3, 50).WithMessage("Department name must be between 3 and 50 characters.")
                 .Must((department, name) => !db.Departments.Any(dep => dep.Name == name && dep.DepartmentId != department.DepartmentId))
-                .WithMessage("Department name must be unique.");
+                .WithMessage("This department name is already in use. Please choose a different name.");
 
             RuleFor(d => d.Code)
-                .NotEmpty()
-                .Matches(@"^[A-Z]{4}$")
+                .NotEmpty().WithMessage("Department code is required.")
+                .Matches(@"^[A-Z]{4}$").WithMessage("Department code must be exactly 4 uppercase letters (A-Z).")
                 .Must((department, code) => !db.Departments.Any(dep => dep.Code == code && dep.DepartmentId != department.DepartmentId))
-                .WithMessage("Department code must be unique and exactly 4 uppercase letters.");
+                .WithMessage("This department code is already in use. Please choose a different code.");
 
             RuleFor(d => d.Location)
-                .NotEmpty()
-                .MaximumLength(100);
+                .NotEmpty().WithMessage("Department location is required.")
+                .MaximumLength(100).WithMessage("Department location must not exceed 100 characters.");
         }
     }
 } 

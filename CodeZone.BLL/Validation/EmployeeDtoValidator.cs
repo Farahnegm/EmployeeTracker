@@ -1,12 +1,14 @@
 ﻿using FluentValidation;
 using CodeZone.BLL.DTOs;
 using System.Text.RegularExpressions;
+using CodeZone.DAL.Data;
+using System.Linq;
 
 namespace CodeZone.BLL.Validation
 {
     public class EmployeeDtoValidator : AbstractValidator<EmployeeDto>
     {
-        public EmployeeDtoValidator()
+        public EmployeeDtoValidator(AppDbContext db)
         {
             RuleFor(e => e.FullName)
                 .NotEmpty()
@@ -14,7 +16,15 @@ namespace CodeZone.BLL.Validation
             
             RuleFor(e => e.Email)
                 .NotEmpty()
-                .EmailAddress().WithMessage("Email is not valid.");
+                .EmailAddress().WithMessage("Email is not valid.")
+                .Must(email => 
+                    email != null && 
+                    System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+                ).WithMessage("Email must be a valid email address with a domain (e.g., user@example.com).")
+                .Must((dto, email) =>
+                    !db.Employees.Any(emp => emp.Email.ToLower().Trim() == email.ToLower().Trim() && emp.Id != dto.Id)
+                )
+                .WithMessage("Email must be unique.");
 
             RuleFor(e => e.DepartmentId)
                 .GreaterThan(0).WithMessage("Department must be selected.");

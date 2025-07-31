@@ -1,0 +1,49 @@
+@model IEnumerable<CodeZone.DAL.Entities.Attendance>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-calendar-check"></i> Attendance History
+        </h5>
+    </div>
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                <p>No attendance records found.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var attendance in Model.OrderByDescending(a => a.Date))
+                        {
+                            <tr>
+                                <td>@attendance.Date.ToString("MMM dd, yyyy")</td>
+                                <td>
+                                    @if (attendance.Status == CodeZone.DAL.Entities.Enum.AttendanceStatus.Present)
+                                    {
+                                        <span class="badge bg-success">Present</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Absent</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div> 

@@ -18,7 +18,13 @@ namespace CodeZone.BLL.Validation
             RuleFor(e => e.Email)
                 .NotEmpty()
                 .EmailAddress().WithMessage("Email is not valid.")
-                .Must((employee, email) => !db.Employees.Any(emp => emp.Email == email && emp.Id != employee.Id))
+                .Must(email => 
+                    email != null && 
+                    System.Text.RegularExpressions.Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+                ).WithMessage("Email must be a valid email address with a domain (e.g., user@example.com).")
+                .Must((employee, email) =>
+                    !db.Employees.Any(emp => emp.Email.ToLower().Trim() == email.ToLower().Trim() && emp.Id != employee.Id)
+                )
                 .WithMessage("Email must be unique.");
 
             RuleFor(e => e.DepartmentId)

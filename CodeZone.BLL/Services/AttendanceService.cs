@@ -41,6 +41,12 @@ namespace CodeZone.BLL.Services
         public async Task<Attendance?> GetByEmployeeAndDateAsync(int employeeId, DateTime date)
             => await _repo.GetByEmployeeAndDateAsync(employeeId, date);
 
+        public async Task<IEnumerable<Attendance>> GetAttendanceByEmployeeAsync(int employeeId)
+        {
+            var allAttendances = await _repo.GetAllAsync();
+            return allAttendances.Where(a => a.EmployeeId == employeeId);
+        }
+
         public async Task<(Attendance? attendance, ValidationResult validation)> AddAsync(AttendanceDto dto)
         {
             // Validate the DTO

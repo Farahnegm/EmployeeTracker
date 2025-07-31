@@ -20,24 +20,34 @@ namespace CodeZone_Task.Models
                 await context.SaveChangesAsync();
 
                 // Seed Employees with unique codes
-                int employeeCodeCounter = 1000;
+                var usedCodes = new HashSet<int>();
+                var random = new Random();
+                int GetRandomCode()
+                {
+                    int code;
+                    do {
+                        code = random.Next(100000, 999999);
+                    } while (usedCodes.Contains(code) || context.Employees.Any(e => e.EmployeeCode == code));
+                    usedCodes.Add(code);
+                    return code;
+                }
                 var emp1 = new Employee
                 {
-                    EmployeeCode = employeeCodeCounter++,
+                    EmployeeCode = GetRandomCode(),
                     FullName = "John Adam Smith Lee",
                     Email = "john.smith@example.com",
                     DepartmentId = dept1.DepartmentId
                 };
                 var emp2 = new Employee
                 {
-                    EmployeeCode = employeeCodeCounter++,
+                    EmployeeCode = GetRandomCode(),
                     FullName = "Sara Jane Mark Doe",
                     Email = "sara.doe@example.com",
                     DepartmentId = dept2.DepartmentId
                 };
                 var emp3 = new Employee
                 {
-                    EmployeeCode = employeeCodeCounter++,
+                    EmployeeCode = GetRandomCode(),
                     FullName = "Ali Omar Fady Noor",
                     Email = "ali.noor@example.com",
                     DepartmentId = dept3.DepartmentId
@@ -54,16 +64,6 @@ namespace CodeZone_Task.Models
                 );
                 await context.SaveChangesAsync();
             }
-        }
-
-        private static int GenerateUniqueEmployeeCode(AppDbContext context)
-        {
-            // Get the maximum employee code from the database
-            var maxCode = context.Employees.Any() 
-                ? context.Employees.Max(e => e.EmployeeCode) 
-                : 999; // Start from 1000 if no employees exist
-            
-            return maxCode + 1;
         }
     }
 }
