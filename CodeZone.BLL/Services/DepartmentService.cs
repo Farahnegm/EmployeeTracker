@@ -26,14 +26,12 @@ namespace CodeZone.BLL.Services
 
         public async Task<(Department? department, ValidationResult validation)> CreateAsync(Department department)
         {
-            // Validate the department
             var validationResult = await _validator.ValidateAsync(department);
             if (!validationResult.IsValid)
             {
                 return (null, validationResult);
             }
 
-            // Check for duplicate name or code
             var exists = await _repository.GetByNameOrCodeAsync(department.Name, department.Code);
             if (exists != null)
             {
@@ -47,14 +45,12 @@ namespace CodeZone.BLL.Services
 
         public async Task<(bool success, ValidationResult validation)> UpdateAsync(Department department)
         {
-            // Validate the department
             var validationResult = await _validator.ValidateAsync(department);
             if (!validationResult.IsValid)
             {
                 return (false, validationResult);
             }
 
-            // Check for duplicate name or code (excluding current department)
             var exists = await _repository.GetByNameOrCodeAsync(department.Name, department.Code);
             if (exists != null && exists.DepartmentId != department.DepartmentId)
             {
@@ -77,7 +73,6 @@ namespace CodeZone.BLL.Services
                 return (false, validationResult);
             }
 
-            // Check if department has employees
             if (dept.Employees != null && dept.Employees.Any())
             {
                 validationResult.Errors.Add(new ValidationFailure("Name", "Cannot delete department. It has associated employees."));

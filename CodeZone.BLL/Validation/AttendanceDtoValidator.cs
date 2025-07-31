@@ -21,11 +21,6 @@ namespace CodeZone.BLL.Validation
                     var todayDate = DateTime.Today.Date;
                     var isValid = inputDate <= todayDate;
                     
-                    // Debug info
-                    Debug.WriteLine($"[Validator] Input Date: {inputDate:yyyy-MM-dd}");
-                    Debug.WriteLine($"[Validator] Today Date: {todayDate:yyyy-MM-dd}");
-                    Debug.WriteLine($"[Validator] Is Valid: {isValid}");
-                    
                     return isValid;
                 })
                 .WithMessage($"Attendance date cannot be in the future. Today's date is {DateTime.Today:MM/dd/yyyy}.");

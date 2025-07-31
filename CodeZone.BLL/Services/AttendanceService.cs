@@ -49,14 +49,12 @@ namespace CodeZone.BLL.Services
 
         public async Task<(Attendance? attendance, ValidationResult validation)> AddAsync(AttendanceDto dto)
         {
-            // Validate the DTO
             var validationResult = await _validator.ValidateAsync(dto);
             if (!validationResult.IsValid)
             {
                 return (null, validationResult);
             }
 
-            // Check if attendance already exists for this employee on this date
             if (await _repo.ExistsAsync(dto.EmployeeId, dto.Date))
             {
                 validationResult.Errors.Add(new ValidationFailure("Date", "Attendance has already been marked for this employee on this date."));
@@ -76,7 +74,6 @@ namespace CodeZone.BLL.Services
 
         public async Task<(bool success, ValidationResult validation)> UpdateAsync(int id, AttendanceDto dto)
         {
-            // Validate the DTO
             var validationResult = await _validator.ValidateAsync(dto);
             if (!validationResult.IsValid)
             {
@@ -90,14 +87,12 @@ namespace CodeZone.BLL.Services
                 return (false, validationResult);
             }
 
-            // Check if the status is the same (no change needed)
             if (entity.Status == dto.Status && entity.Date.Date == dto.Date.Date)
             {
                 validationResult.Errors.Add(new ValidationFailure("Status", "No changes detected. The attendance status is already set to the same value."));
                 return (false, validationResult);
             }
 
-            // Check if attendance already exists for this employee on this date (excluding current record)
             if (await _repo.ExistsAsync(dto.EmployeeId, dto.Date, id))
             {
                 validationResult.Errors.Add(new ValidationFailure("Date", "Attendance has already been marked for this employee on this date."));
@@ -115,7 +110,6 @@ namespace CodeZone.BLL.Services
         {
             var validationResult = new ValidationResult();
 
-            // Get the attendance record
             var entity = await _repo.GetByIdAsync(id);
             if (entity == null)
             {
@@ -123,21 +117,18 @@ namespace CodeZone.BLL.Services
                 return (false, validationResult);
             }
 
-            // Parse the status string to enum
             if (!Enum.TryParse<AttendanceStatus>(status, out var statusEnum))
             {
                 validationResult.Errors.Add(new ValidationFailure("Status", "Invalid status value."));
                 return (false, validationResult);
             }
 
-            // Check if status is the same (no change needed)
             if (entity.Status == statusEnum)
             {
                 validationResult.Errors.Add(new ValidationFailure("Status", "No changes detected. The attendance status is already set to the same value."));
                 return (false, validationResult);
             }
 
-            // Update only the status
             entity.Status = statusEnum;
             await _repo.UpdateAsync(entity);
             
@@ -150,14 +141,12 @@ namespace CodeZone.BLL.Services
 
             try
             {
-                // Parse the status string to enum
                 if (!Enum.TryParse<AttendanceStatus>(status, out var statusEnum))
                 {
                     validationResult.Errors.Add(new ValidationFailure("Status", "Invalid status value."));
                     return (false, validationResult);
                 }
 
-                // Create DTO from parameters (business logic)
                 var attendanceDto = new AttendanceDto
                 {
                     EmployeeId = employeeId,
@@ -165,17 +154,14 @@ namespace CodeZone.BLL.Services
                     Status = statusEnum
                 };
 
-                // Check if attendance record already exists for this employee and date
                 var existingAttendance = await _repo.GetByEmployeeAndDateAsync(employeeId, date);
                 
                 if (existingAttendance != null)
                 {
-                    // Update existing record
                     return await UpdateAsync(existingAttendance.AttendanceId, attendanceDto);
                 }
                 else
                 {
-                    // Create new record
                     var (attendance, addValidation) = await AddAsync(attendanceDto);
                     return (attendance != null, addValidation);
                 }
@@ -199,7 +185,6 @@ namespace CodeZone.BLL.Services
             var totalItems = allAttendances.Count();
             var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
             
-            // Ensure page is within valid range
             page = Math.Max(1, Math.Min(page, totalPages > 0 ? totalPages : 1));
             
             var pagedAttendances = allAttendances
@@ -222,7 +207,6 @@ namespace CodeZone.BLL.Services
             var totalItems = allAttendances.Count();
             var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
             
-            // Ensure page is within valid range
             page = Math.Max(1, Math.Min(page, totalPages > 0 ? totalPages : 1));
             
             var pagedAttendances = allAttendances
@@ -241,11 +225,9 @@ namespace CodeZone.BLL.Services
 
         public async Task<IEnumerable<Attendance>> SearchAttendancesAsync(string searchTerm, int? deptId = null, int? empId = null, DateTime? from = null, DateTime? to = null)
         {
-            // First get filtered data
             var filteredAttendances = await _repo.FilterAsync(deptId, empId, from, to);
             var searchTermLower = searchTerm.ToLower().Trim();
 
-            // Then search within the filtered data
             return filteredAttendances.Where(attendance =>
                 attendance.Employee.FullName.ToLower().Contains(searchTermLower) ||
                 attendance.Employee.Department.Name.ToLower().Contains(searchTermLower) ||

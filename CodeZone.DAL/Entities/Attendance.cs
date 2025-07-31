@@ -24,16 +24,3 @@ namespace CodeZone.DAL.Entities
     }
 
 }
-
-//namespace CodeZone.DAL.Data
-//{
-//    public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
-//    {
-//        public AppDbContext CreateDbContext(string[] args)
-//        {
-//            var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-//            optionsBuilder.UseInMemoryDatabase("AttendanceTracker");
-//            return new AppDbContext(optionsBuilder.Options);
-//        }
-//    }
-//}

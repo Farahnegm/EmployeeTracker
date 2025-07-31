@@ -15,13 +15,11 @@ namespace CodeZone.BLL.Extensions
             services.AddScoped<IDepartmentService,DepartmentService>();
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<IAttendanceService, AttendanceService>();
-
-            // Register all your validators from the BLL layer
-           services.AddValidatorsFromAssemblyContaining<EmployeeDtoValidator>();
-           services.AddValidatorsFromAssemblyContaining<EmployeeValidator>();
+            services.AddValidatorsFromAssemblyContaining<EmployeeDtoValidator>();
+            services.AddValidatorsFromAssemblyContaining<EmployeeValidator>();
             services.AddValidatorsFromAssemblyContaining<DepartmentValidator>();
-           services.AddValidatorsFromAssemblyContaining<AttendanceValidator>();
-           services.AddValidatorsFromAssemblyContaining<AttendanceDtoValidator>();
+            services.AddValidatorsFromAssemblyContaining<AttendanceValidator>();
+            services.AddValidatorsFromAssemblyContaining<AttendanceDtoValidator>();
 
 
 

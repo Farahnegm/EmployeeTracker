@@ -10,15 +10,15 @@
         <div class="row">
             <div class="col-md-6">
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">Code:</dt>
+                    <dt class="col-sm-4">Employee Code:</dt>
                     <dd class="col-sm-8">
                         <span class="badge bg-primary">@Model.EmployeeCode</span>
                     </dd>
                     
-                    <dt class="col-sm-4">Name:</dt>
+                    <dt class="col-sm-4">Full Name:</dt>
                     <dd class="col-sm-8">@Model.FullName</dd>
                     
-                    <dt class="col-sm-4">Email:</dt>
+                    <dt class="col-sm-4">Email Address:</dt>
                     <dd class="col-sm-8">
                         <a href="mailto:@Model.Email">@Model.Email</a>
                     </dd>
@@ -31,12 +31,12 @@
                         <span class="badge bg-secondary">@Model.DepartmentName</span>
                     </dd>
                     
-                    <dt class="col-sm-4">Present Days:</dt>
+                    <dt class="col-sm-4">Days Present:</dt>
                     <dd class="col-sm-8">
                         <span class="badge bg-success">@Model.Presents</span>
                     </dd>
                     
-                    <dt class="col-sm-4">Absent Days:</dt>
+                    <dt class="col-sm-4">Days Absent:</dt>
                     <dd class="col-sm-8">
                         <span class="badge bg-danger">@Model.Absents</span>
                     </dd>
@@ -53,17 +53,6 @@
                     </dd>
                 </dl>
             </div>
-        </div>
-        
-        <div class="mt-3">
-            <a asp-controller="Employee" asp-action="Details" asp-route-id="@Model.Id" 
-               class="btn btn-sm btn-outline-primary">
-                <i class="fas fa-eye"></i> View Full Details
-            </a>
-            <a asp-controller="Employee" asp-action="Edit" asp-route-id="@Model.Id" 
-               class="btn btn-sm btn-outline-warning">
-                <i class="fas fa-edit"></i> Edit Employee
-            </a>
         </div>
     </div>
 </div> 

@@ -50,7 +50,6 @@ namespace CodeZone.BLL.Services
             var totalItems = allEmployees.Count();
             var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
             
-            // Ensure page is within valid range
             page = Math.Max(1, Math.Min(page, totalPages > 0 ? totalPages : 1));
             
             var pagedEmployees = allEmployees
@@ -122,7 +121,6 @@ namespace CodeZone.BLL.Services
                 return (false, validationResult);
             }
 
-            // Check email uniqueness (excluding current employee)
             if (_repo.EmailExists(dto.Email) && employee.Email != dto.Email)
             {
                 validationResult.Errors.Add(new FluentValidation.Results.ValidationFailure("Email", "Email must be unique."));
@@ -163,7 +161,6 @@ namespace CodeZone.BLL.Services
                 return (null, validationResult);
             }
 
-            // Check email uniqueness
             if (_repo.EmailExists(dto.Email))
             {
                 validationResult.Errors.Add(new FluentValidation.Results.ValidationFailure("Email", "Email must be unique."));

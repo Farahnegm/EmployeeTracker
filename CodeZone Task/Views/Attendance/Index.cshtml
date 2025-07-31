@@ -620,7 +620,7 @@
                 const day = String(selectedDate.getDate()).padStart(2, '0');
                 const selectedDateString = `${year}-${month}-${day}`;
                 
-                // Make AJAX call to check current status
+                
                 $.ajax({
                     url: '/Attendance/GetAttendanceStatus',
                     type: 'GET',
@@ -632,7 +632,7 @@
                         const status = response.status || 'Not marked';
                         $('#currentStatusText').text(status);
                         
-                        // Show/hide status update section based on whether attendance is marked
+                      
                         if (status === 'Not marked') {
                             $('#statusUpdateSection').show();
                         } else {
@@ -652,7 +652,7 @@
                     return;
                 }
                 
-                // Create date string in local time to match calendar format
+               
                 const year = selectedDate.getFullYear();
                 const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
                 const day = String(selectedDate.getDate()).padStart(2, '0');
@@ -676,10 +676,9 @@
                         if (response.success) {
                             showAlert(`Attendance marked as ${status} successfully!`, 'success');
                             
-                            // Refresh current status display
+                          
                             checkCurrentStatus();
                             
-                            // Refresh main table if needed
                             setTimeout(function() {
                                 location.reload();
                             }, 1500);
@@ -693,7 +692,7 @@
                 });
             };
 
-            // Edit Status Button Click
+          
             $(document).on('click', '.edit-status-btn', function() {
                 const row = $(this).closest('tr');
                 const statusCell = row.find('.status-cell');
@@ -809,7 +808,7 @@
                         success: function(data) {
                             $('#attendanceTable tbody').html(data);
                             
-                            // Re-attach delete event handlers to new rows
+                           
                             $('.delete-attendance').click(function() {
                                 var $row = $(this).closest('tr');
                                 var id = $(this).data('id');
@@ -830,8 +829,7 @@
                                 }
                             });
                             
-                            // Note: Status editing functionality uses $(document).on() 
-                            // so it automatically works with dynamically added content
+                           
                         },
                         error: function() {
                             showNotification('Error performing search.', 'danger');
@@ -840,10 +838,10 @@
                 }
 
                 $searchInput.on('input', function() {
-                    // Clear previous timeout
+                   
                     clearTimeout(searchTimeout);
                     
-                    // Set new timeout for search (debounce)
+                   
                     searchTimeout = setTimeout(function() {
                         performSearch();
                     }, 300);
